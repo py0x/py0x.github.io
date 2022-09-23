@@ -26,4 +26,4 @@ highlight_code = true
 footer_tagline = "Email: py@pypy.info"
 zola = false
 netlify = false
-maintained_with_love = false
+maintained_with_love = true
