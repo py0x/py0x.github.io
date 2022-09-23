@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+	<title>Me as a method</title>
+	<subtitle>Email: py@pypy.info</subtitle>
+	<link href="http://pypy.info/atom.xml" rel="self" type="application/atom+xml"/>
+  <link href="http://pypy.info"/>
+	<generator uri="https://www.getzola.org/">Zola</generator>
+	<updated>2022-09-23T00:00:00+00:00</updated>
+	<id>http://pypy.info/atom.xml</id>
+	<entry xml:lang="en">
+		<title>来点中文</title>
+		<published>2022-09-23T00:00:00+00:00</published>
+		<updated>2022-09-23T00:00:00+00:00</updated>
+		<link rel="alternate" href="http://pypy.info/hello-world/" type="text/html"/>
+		<id>http://pypy.info/hello-world/</id>
+		<content type="html">&lt;p&gt;Hello World!&lt;&#x2F;p&gt;
+&lt;p&gt;测试中文显示&lt;&#x2F;p&gt;
+&lt;p&gt;This is just a sample post.&lt;&#x2F;p&gt;
+&lt;p&gt;Vestibulum imperdiet adipiscing arcu, quis aliquam dolor condimentum dapibus. Aliquam fermentum leo aliquet quam volutpat et molestie mauris mattis. Suspendisse semper consequat velit in suscipit. Praesent blandit, mi id facilisis adipiscing, tortor tellus mollis quam, sed dignissim sapien diam ac lectus. Nunc eget ornare quam. Vivamus sit amet tortor dolor, non egestas ligula. Mauris nisi risus, semper nec blandit id, suscipit eget dolor. Sed placerat odio at erat porttitor varius. Phasellus ornare vestibulum dolor ac rhoncus. Mauris laoreet varius est eu rhoncus. Curabitur facilisis mauris eu purus pharetra vitae tincidunt nulla gravida. Duis sagittis, felis a luctus mattis, metus sem tempus velit, sit amet blandit tellus nisi id augue.&lt;&#x2F;p&gt;
+&lt;p&gt;Proin feugiat libero ac lorem mollis fermentum. Cras et lacus sodales nisl facilisis ornare. Sed dolor eros, pulvinar ac varius non, bibendum eget odio. Nulla facilisi. Pellentesque et nisi a tellus ullamcorper faucibus. Nullam sagittis tempor mi non mattis. Proin ultricies, enim sit amet bibendum tristique, ligula ante feugiat nunc, sit amet imperdiet tortor nisl et felis. Pellentesque et nisl dui, non dictum libero. Vivamus tempor ante ac leo suscipit a sodales ligula iaculis. Curabitur massa mi, semper sed bibendum eget, auctor in nulla. Quisque at mi in ligula viverra suscipit sed vitae leo. &lt;&#x2F;p&gt;
+</content>
+	</entry>
+</feed>
