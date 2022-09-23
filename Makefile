@@ -1,5 +1,5 @@
 build:
-	zola build && mv public docs
+	rm -rf docs && zola build && mv public docs
 
 serve:
 	zola serve
