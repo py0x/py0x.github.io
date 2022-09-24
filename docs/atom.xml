@@ -5,16 +5,92 @@
 	<link href="http://pypy.info/atom.xml" rel="self" type="application/atom+xml"/>
   <link href="http://pypy.info"/>
 	<generator uri="https://www.getzola.org/">Zola</generator>
-	<updated>2022-09-23T00:00:00+00:00</updated>
+	<updated>2022-09-24T00:00:00+00:00</updated>
 	<id>http://pypy.info/atom.xml</id>
 	<entry xml:lang="en">
-		<title>博客冷启动</title>
-		<published>2022-09-23T00:00:00+00:00</published>
-		<updated>2022-09-23T00:00:00+00:00</updated>
-		<link rel="alternate" href="http://pypy.info/hello-world/" type="text/html"/>
-		<id>http://pypy.info/hello-world/</id>
-		<content type="html">&lt;p&gt;Hello World!&lt;&#x2F;p&gt;
-&lt;p&gt;测试中文显示&lt;&#x2F;p&gt;
+		<title>简明 Rust 指南 - 理解 Rust Ownership 机制</title>
+		<published>2022-09-24T00:00:00+00:00</published>
+		<updated>2022-09-24T00:00:00+00:00</updated>
+		<link rel="alternate" href="http://pypy.info/rust-ownership/" type="text/html"/>
+		<id>http://pypy.info/rust-ownership/</id>
+		<content type="html">&lt;p&gt;每个编程语言都有自己管理内存的方式。因为内存有限，原则是数据在使用的时候加载到内存，不需要使用的时候及时释放，避免内存被撑爆。&lt;&#x2F;p&gt;
+&lt;p&gt;较底层的语言比如 &lt;code&gt;C&lt;&#x2F;code&gt;  ，需要程序员手动管理内存。也就是手动申请内存，手动释放内存。&lt;&#x2F;p&gt;
+&lt;p&gt;较高级的语言比如 &lt;code&gt;Python&lt;&#x2F;code&gt; ，有所谓垃圾回收机制，无需用户手动管理内存，大为减轻程序员心智负担。&lt;&#x2F;p&gt;
+&lt;p&gt;而 &lt;code&gt;Rust&lt;&#x2F;code&gt; 比较独特，采用了一种叫 &lt;code&gt;Ownership&lt;&#x2F;code&gt; 的机制来管理内存。可以认为是一种半自动的内存管理方式。&lt;&#x2F;p&gt;
+&lt;p&gt;据说有不少程序员在理解 &lt;code&gt;Ownership&lt;&#x2F;code&gt; 机制时会遇到困难，其中不乏经验丰富的程序员。&lt;&#x2F;p&gt;
+&lt;p&gt;经验告诉我们，理解新事物出现困难，往往是成见太深。也就是说只要放轻松，回归到事情的原点来看待问题，就可以了。&lt;&#x2F;p&gt;
+&lt;p&gt;假如现在要实现一个自动管理内存的机制，比较自然的思路是看看这块内存有谁在使用，如果没有被使用，则表明这块内存可以被回收以便再次使用。这个思路大家称之为&lt;code&gt;引用计数法&lt;&#x2F;code&gt;，即当引用数为 0 时，可回收内存。比如：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;python&quot; style=&quot;background-color:#2b303b;color:#c0c5ce;&quot; class=&quot;language-python &quot;&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;&lt;span&gt;a = &lt;&#x2F;span&gt;&lt;span style=&quot;color:#bf616a;&quot;&gt;Data&lt;&#x2F;span&gt;&lt;span&gt;()
+&lt;&#x2F;span&gt;&lt;span&gt;b = a
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;此时，对数据 &lt;code&gt;Data()&lt;&#x2F;code&gt; 所占用的内存，有 &lt;code&gt;2&lt;&#x2F;code&gt; 个引用，分别是 &lt;code&gt;a&lt;&#x2F;code&gt;  和 &lt;code&gt;b&lt;&#x2F;code&gt;  。当 &lt;code&gt;a&lt;&#x2F;code&gt; 和 &lt;code&gt;b&lt;&#x2F;code&gt; 这两个变量退出作用域，那么数据 &lt;code&gt;Data&lt;&#x2F;code&gt; 所占用的内存引用数为 &lt;code&gt;0&lt;&#x2F;code&gt;，可以在恰当的时候被回收。(所谓变量退出作用域，大意是变量所在的作用域 (scope) 被关闭，比如函数返回)。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;引用计数&lt;&#x2F;code&gt;这种行为会给程序带来额外的开销，因为运行时 (runtime) 需要一直去追踪每份数据到底有多少引用，并且对引用数为 0 的数据定时执行释放。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;Rust&lt;&#x2F;code&gt; 的思路是既然引用计数会带来额外开销，那就干脆不计数了。&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;引用数永远为 1，可不可以？&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;回到刚才的例子，&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;python&quot; style=&quot;background-color:#2b303b;color:#c0c5ce;&quot; class=&quot;language-python &quot;&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;&lt;span&gt;a = &lt;&#x2F;span&gt;&lt;span style=&quot;color:#bf616a;&quot;&gt;Data&lt;&#x2F;span&gt;&lt;span&gt;()  &lt;&#x2F;span&gt;&lt;span style=&quot;color:#65737e;&quot;&gt;# 引用数 = 1 ，引用为 a 
+&lt;&#x2F;span&gt;&lt;span&gt;b = a &lt;&#x2F;span&gt;&lt;span style=&quot;color:#65737e;&quot;&gt;# 引用数 = 1 ，引用为 b， 且 a 不再合法 
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;在 &lt;code&gt;b = a&lt;&#x2F;code&gt; 之后，&lt;code&gt;a&lt;&#x2F;code&gt; 不能再使用，因为引用数只能为 1，且对 &lt;code&gt;Data()&lt;&#x2F;code&gt; 的引用变成了 &lt;code&gt;b&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;直观一点来看这个规则，&lt;code&gt;Data()&lt;&#x2F;code&gt; 就像有了一个 &lt;code&gt;owner&lt;&#x2F;code&gt; 一样，&lt;code&gt;a = Data()&lt;&#x2F;code&gt; 时，&lt;code&gt;owner&lt;&#x2F;code&gt; 是 &lt;code&gt;a&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;b = a&lt;&#x2F;code&gt; 后，&lt;code&gt;owner&lt;&#x2F;code&gt; 从 &lt;code&gt;a&lt;&#x2F;code&gt; 变成了 &lt;code&gt;b&lt;&#x2F;code&gt;，就像 &lt;code&gt;Data()&lt;&#x2F;code&gt; 从 &lt;code&gt;a&lt;&#x2F;code&gt; 转移 (move) 到了 &lt;code&gt;b&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;有了这个规则之后，内存回收就变得简单了，当 &lt;code&gt;owner&lt;&#x2F;code&gt; 退出作用域时 (scope 关闭)，就可以回收内存。&lt;&#x2F;p&gt;
+&lt;p&gt;我认为，在写 &lt;code&gt;Rust&lt;&#x2F;code&gt; 程序的时候，保持一种&lt;strong&gt;数据在不同的变量之间移来移去&lt;&#x2F;strong&gt;的感觉是非常有帮助的。&lt;&#x2F;p&gt;
+&lt;p&gt;然而，问题还没完全解决。现实是复杂的，某些情况下，引用数就是需要有多个，不可能为 1。&lt;&#x2F;p&gt;
+&lt;p&gt;怎么办？&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;引用计数啊！&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;code&gt;Rust&lt;&#x2F;code&gt; 的意思是，只有在需要的时候，才使用引用计数。&lt;code&gt;Rust&lt;&#x2F;code&gt; 提供了 &lt;code&gt;Rc&lt;&#x2F;code&gt; 和 &lt;code&gt;Arc&lt;&#x2F;code&gt; 两种 wrapper 来启用引用计数功能 (&lt;code&gt;Arc&lt;&#x2F;code&gt; 是线程安全版本的 &lt;code&gt;Rc&lt;&#x2F;code&gt;)。上面的例子可以写为:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;Rust&quot; style=&quot;background-color:#2b303b;color:#c0c5ce;&quot; class=&quot;language-Rust &quot;&gt;&lt;code class=&quot;language-Rust&quot; data-lang=&quot;Rust&quot;&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; a = Rc::new(Data::new());
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; b = a.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#96b5b4;&quot;&gt;clone&lt;&#x2F;span&gt;&lt;span&gt;();
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;这时候，当 &lt;code&gt;a&lt;&#x2F;code&gt; 和 &lt;code&gt;b&lt;&#x2F;code&gt; 都不再使用时，&lt;code&gt;Data&lt;&#x2F;code&gt; 才会被销毁。&lt;&#x2F;p&gt;
+&lt;p&gt;引用计数的使用场景在并发共享数据的情况下极为常见，比如要开 &lt;code&gt;n&lt;&#x2F;code&gt; 个线程同时访问同一份数据，这时候便需要用 &lt;code&gt;Arc&lt;&#x2F;code&gt; 把数据包装起来，然后 &lt;code&gt;.clone()&lt;&#x2F;code&gt;  &lt;code&gt;n&lt;&#x2F;code&gt; 次得到 &lt;code&gt;n&lt;&#x2F;code&gt; 个 owner，再 move 到线程里边使用。大概的模式如下：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#2b303b;color:#c0c5ce;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; n = &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d08770;&quot;&gt;10&lt;&#x2F;span&gt;&lt;span&gt;;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; data = Arc::new(Data::new());  &lt;&#x2F;span&gt;&lt;span style=&quot;color:#65737e;&quot;&gt;&#x2F;&#x2F;开启引用计数
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;for&lt;&#x2F;span&gt;&lt;span&gt; i in &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d08770;&quot;&gt;1&lt;&#x2F;span&gt;&lt;span&gt;..n {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; data_x = data.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#96b5b4;&quot;&gt;clone&lt;&#x2F;span&gt;&lt;span&gt;();  &lt;&#x2F;span&gt;&lt;span style=&quot;color:#65737e;&quot;&gt;&#x2F;&#x2F; 先 clone 一个 owner
+&lt;&#x2F;span&gt;&lt;span&gt;    thread::spawn(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;move &lt;&#x2F;span&gt;&lt;span&gt;|| {
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;color:#96b5b4;&quot;&gt;do_something&lt;&#x2F;span&gt;&lt;span&gt;(data_x);  &lt;&#x2F;span&gt;&lt;span style=&quot;color:#65737e;&quot;&gt;&#x2F;&#x2F; 将 data_x move 到线程内使用 
+&lt;&#x2F;span&gt;&lt;span&gt;    })
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;有了 &lt;code&gt;Rc&lt;&#x2F;code&gt; 和 &lt;code&gt;Arc&lt;&#x2F;code&gt;， 问题似乎得到了完美的解决。&lt;&#x2F;p&gt;
+&lt;p&gt;但是，这样做似乎很麻烦。因为多引用是一个极为常见的情况。有没有别的办法？&lt;&#x2F;p&gt;
+&lt;p&gt;引用计数，引用计数。能不能只引用，不计数？&lt;&#x2F;p&gt;
+&lt;p&gt;关键就在这里。引用之所以需要计数，是因为引用的新增和销毁行为是动态的，也就是说需要把程序跑起来才能知道，所以才需要一个动态的计数器来追踪这个动态的行为。&lt;&#x2F;p&gt;
+&lt;p&gt;反过来，如果引用的新增和销毁行为是静态的，也就是编译期就能知道，那么就不需要计数了。&lt;&#x2F;p&gt;
+&lt;p&gt;比如有数据引用 a，此后从 a 衍生出新引用 &amp;amp;a，且静态分析得知 &amp;amp;a 使用并销毁在 a 销毁之前，那么数据就可以只增加引用而不增加计数，因为从内存回收的角度，这个 &amp;amp;a 的引用实际上就像没出现过一样。&lt;&#x2F;p&gt;
+&lt;p&gt;也就是说，编译时确保 &amp;amp;a 的生命周期在 a 的生命周期以内，那么运行时只需要在 a 销毁的时候回收内存即可。&lt;&#x2F;p&gt;
+&lt;p&gt;直观感受一下：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;textile&quot; style=&quot;background-color:#2b303b;color:#c0c5ce;&quot; class=&quot;language-textile &quot;&gt;&lt;code class=&quot;language-textile&quot; data-lang=&quot;textile&quot;&gt;&lt;span&gt;{
+&lt;&#x2F;span&gt;&lt;span&gt;    a = Data()
+&lt;&#x2F;span&gt;&lt;span&gt;    {
+&lt;&#x2F;span&gt;&lt;span&gt;        b = &amp;amp;a  &#x2F;&#x2F; &amp;amp;a started
+&lt;&#x2F;span&gt;&lt;span&gt;        ... do something ...
+&lt;&#x2F;span&gt;&lt;span&gt;    }  &#x2F;&#x2F; &amp;amp;a ended
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;这就是 &lt;code&gt;Rust&lt;&#x2F;code&gt; 所谓的 &lt;code&gt;Borrow&lt;&#x2F;code&gt; 和 &lt;code&gt;Lifetime&lt;&#x2F;code&gt; 的概念。&lt;&#x2F;p&gt;
+&lt;p&gt;需要注意的是，&lt;code&gt;Borrow&lt;&#x2F;code&gt; 和 &lt;code&gt;Lifetime&lt;&#x2F;code&gt; 需要依赖编译期的静态分析，所以往往适用于顺序执行的情况。而在并发执行时，因为往往不知道哪个并发单元先执行完，需要使用动态的 &lt;code&gt;Arc&lt;&#x2F;code&gt; 来进行引用计数。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;p&gt;总结：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;Ownership&lt;&#x2F;code&gt; 机制是一种特殊的引用计数内存管理机制，计数永远为 1 。在写 &lt;code&gt;Rust&lt;&#x2F;code&gt; 程序的时候，保持一种&lt;strong&gt;数据在不同的变量之间移来移去&lt;&#x2F;strong&gt;的感觉是非常有帮助的.&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;Rust&lt;&#x2F;code&gt; 同样支持常规的引用计数内存管理机制，&lt;code&gt;Rc&#x2F;Arc&lt;&#x2F;code&gt;。在并发编程的时候经常会用到。&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;此外，&lt;code&gt;Rust&lt;&#x2F;code&gt; 支持只增加引用不增加计数的机制，也就是 &lt;code&gt;Borrow&lt;&#x2F;code&gt;。这种机制需要依赖编译期的静态分析，以确保 &lt;code&gt;Lifetime&lt;&#x2F;code&gt; 的合法。&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;严谨的细节和规范看文档就可以，带着上面的思路多写写，很容易找到感觉。&lt;&#x2F;p&gt;
 </content>
 	</entry>
 </feed>

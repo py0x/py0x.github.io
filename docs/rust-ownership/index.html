@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>简明 Rust 指南 - 理解 Rust Ownership 机制 &middot; Me as a method</title>
+    <meta name="description" content="Understanding ownership in Rust" />
+    <link rel="shortcut icon"  href="http://pypy.info/favicon.ico" />
+    <link rel="alternate" type="application/atom+xml" title="RSS" href="http://pypy.info/atom.xml">
+
+    <style>html,body{background:#fffaf7;color:#2d2d2d;font:16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"}a,a:visited{color:darkred;text-decoration:none}a:hover{text-decoration:underline}main{margin:auto;max-width:38rem;padding:0.8rem}pre{background:white;overflow:scroll;padding:1rem}td{border:1px solid #2d2d2d;padding:10px}img{height:auto;max-width:100%}.homepage-list{list-style:none;padding:1rem 0}.homepage-list li{align-items:center;display:flex;flex-wrap:wrap;justify-content:space-between;margin-bottom:10px}@media (max-width: 38rem){.homepage-list li a{width:100%}}
+</style>
+
+    <meta property="og:site_name" content="Me as a method">
+      
+      <meta property="og:title" content="简明 Rust 指南 - 理解 Rust Ownership 机制">
+      <meta property="og:description" content="Understanding ownership in Rust">
+      <meta property="og:url" content="http://pypy.info/rust-ownership/">
+      <meta property="og:image" content="">
+
+      <meta property="og:type" content="article" />
+        <meta property="article:published_time" content="2022-09-24T00:00:00+00:00" />
+
+      
+      
+    
+
+  </head>
+  
+
+  <body>
+    <main id="main" role="main">
+
+      
+      <header role="banner">
+        <h3 style="margin-top:0;">
+          <a href="http://pypy.info" title="Home">Me as a method</a>
+          <br /><small>我的想法不是我的，我察觉到了我的想法。</small>
+        </h3>
+      </header>
+      <hr />
+      
+
+      
+<article>
+  <h1>简明 Rust 指南 - 理解 Rust Ownership 机制</h1>
+
+  
+    <p style="font-size:90%;">Posted on <time datetime="2022-09-24T00:00:00+00:00">September 24, 2022</time></p>
+  
+
+  <p>每个编程语言都有自己管理内存的方式。因为内存有限，原则是数据在使用的时候加载到内存，不需要使用的时候及时释放，避免内存被撑爆。</p>
+<p>较底层的语言比如 <code>C</code>  ，需要程序员手动管理内存。也就是手动申请内存，手动释放内存。</p>
+<p>较高级的语言比如 <code>Python</code> ，有所谓垃圾回收机制，无需用户手动管理内存，大为减轻程序员心智负担。</p>
+<p>而 <code>Rust</code> 比较独特，采用了一种叫 <code>Ownership</code> 的机制来管理内存。可以认为是一种半自动的内存管理方式。</p>
+<p>据说有不少程序员在理解 <code>Ownership</code> 机制时会遇到困难，其中不乏经验丰富的程序员。</p>
+<p>经验告诉我们，理解新事物出现困难，往往是成见太深。也就是说只要放轻松，回归到事情的原点来看待问题，就可以了。</p>
+<p>假如现在要实现一个自动管理内存的机制，比较自然的思路是看看这块内存有谁在使用，如果没有被使用，则表明这块内存可以被回收以便再次使用。这个思路大家称之为<code>引用计数法</code>，即当引用数为 0 时，可回收内存。比如：</p>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>a = </span><span style="color:#bf616a;">Data</span><span>()
+</span><span>b = a
+</span></code></pre>
+<p>此时，对数据 <code>Data()</code> 所占用的内存，有 <code>2</code> 个引用，分别是 <code>a</code>  和 <code>b</code>  。当 <code>a</code> 和 <code>b</code> 这两个变量退出作用域，那么数据 <code>Data</code> 所占用的内存引用数为 <code>0</code>，可以在恰当的时候被回收。(所谓变量退出作用域，大意是变量所在的作用域 (scope) 被关闭，比如函数返回)。</p>
+<p><code>引用计数</code>这种行为会给程序带来额外的开销，因为运行时 (runtime) 需要一直去追踪每份数据到底有多少引用，并且对引用数为 0 的数据定时执行释放。</p>
+<p><code>Rust</code> 的思路是既然引用计数会带来额外开销，那就干脆不计数了。</p>
+<blockquote>
+<p>引用数永远为 1，可不可以？</p>
+</blockquote>
+<p>回到刚才的例子，</p>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>a = </span><span style="color:#bf616a;">Data</span><span>()  </span><span style="color:#65737e;"># 引用数 = 1 ，引用为 a 
+</span><span>b = a </span><span style="color:#65737e;"># 引用数 = 1 ，引用为 b， 且 a 不再合法 
+</span></code></pre>
+<p>在 <code>b = a</code> 之后，<code>a</code> 不能再使用，因为引用数只能为 1，且对 <code>Data()</code> 的引用变成了 <code>b</code>。</p>
+<p>直观一点来看这个规则，<code>Data()</code> 就像有了一个 <code>owner</code> 一样，<code>a = Data()</code> 时，<code>owner</code> 是 <code>a</code>。</p>
+<p><code>b = a</code> 后，<code>owner</code> 从 <code>a</code> 变成了 <code>b</code>，就像 <code>Data()</code> 从 <code>a</code> 转移 (move) 到了 <code>b</code>。</p>
+<p>有了这个规则之后，内存回收就变得简单了，当 <code>owner</code> 退出作用域时 (scope 关闭)，就可以回收内存。</p>
+<p>我认为，在写 <code>Rust</code> 程序的时候，保持一种<strong>数据在不同的变量之间移来移去</strong>的感觉是非常有帮助的。</p>
+<p>然而，问题还没完全解决。现实是复杂的，某些情况下，引用数就是需要有多个，不可能为 1。</p>
+<p>怎么办？</p>
+<blockquote>
+<p>引用计数啊！</p>
+</blockquote>
+<p><code>Rust</code> 的意思是，只有在需要的时候，才使用引用计数。<code>Rust</code> 提供了 <code>Rc</code> 和 <code>Arc</code> 两种 wrapper 来启用引用计数功能 (<code>Arc</code> 是线程安全版本的 <code>Rc</code>)。上面的例子可以写为:</p>
+<pre data-lang="Rust" style="background-color:#2b303b;color:#c0c5ce;" class="language-Rust "><code class="language-Rust" data-lang="Rust"><span style="color:#b48ead;">let</span><span> a = Rc::new(Data::new());
+</span><span style="color:#b48ead;">let</span><span> b = a.</span><span style="color:#96b5b4;">clone</span><span>();
+</span></code></pre>
+<p>这时候，当 <code>a</code> 和 <code>b</code> 都不再使用时，<code>Data</code> 才会被销毁。</p>
+<p>引用计数的使用场景在并发共享数据的情况下极为常见，比如要开 <code>n</code> 个线程同时访问同一份数据，这时候便需要用 <code>Arc</code> 把数据包装起来，然后 <code>.clone()</code>  <code>n</code> 次得到 <code>n</code> 个 owner，再 move 到线程里边使用。大概的模式如下：</p>
+<pre data-lang="rust" style="background-color:#2b303b;color:#c0c5ce;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="color:#b48ead;">let</span><span> n = </span><span style="color:#d08770;">10</span><span>;
+</span><span style="color:#b48ead;">let</span><span> data = Arc::new(Data::new());  </span><span style="color:#65737e;">//开启引用计数
+</span><span>
+</span><span style="color:#b48ead;">for</span><span> i in </span><span style="color:#d08770;">1</span><span>..n {
+</span><span>    </span><span style="color:#b48ead;">let</span><span> data_x = data.</span><span style="color:#96b5b4;">clone</span><span>();  </span><span style="color:#65737e;">// 先 clone 一个 owner
+</span><span>    thread::spawn(</span><span style="color:#b48ead;">move </span><span>|| {
+</span><span>        </span><span style="color:#96b5b4;">do_something</span><span>(data_x);  </span><span style="color:#65737e;">// 将 data_x move 到线程内使用 
+</span><span>    })
+</span><span>}
+</span></code></pre>
+<p>有了 <code>Rc</code> 和 <code>Arc</code>， 问题似乎得到了完美的解决。</p>
+<p>但是，这样做似乎很麻烦。因为多引用是一个极为常见的情况。有没有别的办法？</p>
+<p>引用计数，引用计数。能不能只引用，不计数？</p>
+<p>关键就在这里。引用之所以需要计数，是因为引用的新增和销毁行为是动态的，也就是说需要把程序跑起来才能知道，所以才需要一个动态的计数器来追踪这个动态的行为。</p>
+<p>反过来，如果引用的新增和销毁行为是静态的，也就是编译期就能知道，那么就不需要计数了。</p>
+<p>比如有数据引用 a，此后从 a 衍生出新引用 &amp;a，且静态分析得知 &amp;a 使用并销毁在 a 销毁之前，那么数据就可以只增加引用而不增加计数，因为从内存回收的角度，这个 &amp;a 的引用实际上就像没出现过一样。</p>
+<p>也就是说，编译时确保 &amp;a 的生命周期在 a 的生命周期以内，那么运行时只需要在 a 销毁的时候回收内存即可。</p>
+<p>直观感受一下：</p>
+<pre data-lang="textile" style="background-color:#2b303b;color:#c0c5ce;" class="language-textile "><code class="language-textile" data-lang="textile"><span>{
+</span><span>    a = Data()
+</span><span>    {
+</span><span>        b = &amp;a  // &amp;a started
+</span><span>        ... do something ...
+</span><span>    }  // &amp;a ended
+</span><span>}
+</span></code></pre>
+<p>这就是 <code>Rust</code> 所谓的 <code>Borrow</code> 和 <code>Lifetime</code> 的概念。</p>
+<p>需要注意的是，<code>Borrow</code> 和 <code>Lifetime</code> 需要依赖编译期的静态分析，所以往往适用于顺序执行的情况。而在并发执行时，因为往往不知道哪个并发单元先执行完，需要使用动态的 <code>Arc</code> 来进行引用计数。</p>
+<hr />
+<p>总结：</p>
+<ol>
+<li>
+<p><code>Ownership</code> 机制是一种特殊的引用计数内存管理机制，计数永远为 1 。在写 <code>Rust</code> 程序的时候，保持一种<strong>数据在不同的变量之间移来移去</strong>的感觉是非常有帮助的.</p>
+</li>
+<li>
+<p><code>Rust</code> 同样支持常规的引用计数内存管理机制，<code>Rc/Arc</code>。在并发编程的时候经常会用到。</p>
+</li>
+<li>
+<p>此外，<code>Rust</code> 支持只增加引用不增加计数的机制，也就是 <code>Borrow</code>。这种机制需要依赖编译期的静态分析，以确保 <code>Lifetime</code> 的合法。</p>
+</li>
+</ol>
+<p>严谨的细节和规范看文档就可以，带着上面的思路多写写，很容易找到感觉。</p>
+
+</article>
+
+
+      
+      <footer role="contentinfo">
+        <hr />
+        
+        
+        <small>
+          Maintained with &hearts; for the web.<br />
+          Email: py@pypy.info
+        </small>
+        
+      </footer>
+      
+
+    </main>
+    
+    
+  </body>
+</html>
+
