@@ -3,8 +3,6 @@ title = "简明 Rust 指南 - 理解 Rust Ownership 机制"
 description = "Understanding ownership in Rust"
 +++
 
-
-
 每个编程语言都有自己管理内存的方式。因为内存有限，原则是数据在使用的时候加载到内存，不需要使用的时候及时释放，避免内存被撑爆。
 
 较底层的语言比如 `C`  ，需要程序员手动管理内存。也就是手动申请内存，手动释放内存。
