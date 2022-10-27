@@ -5,8 +5,243 @@
 	<link href="http://pypy.info/atom.xml" rel="self" type="application/atom+xml"/>
   <link href="http://pypy.info"/>
 	<generator uri="https://www.getzola.org/">Zola</generator>
-	<updated>2022-09-24T00:00:00+00:00</updated>
+	<updated>2022-10-22T00:00:00+00:00</updated>
 	<id>http://pypy.info/atom.xml</id>
+	<entry xml:lang="en">
+		<title>简明机器学习 - 可微分编程</title>
+		<published>2022-10-22T00:00:00+00:00</published>
+		<updated>2022-10-22T00:00:00+00:00</updated>
+		<link rel="alternate" href="http://pypy.info/differentiable-programming/" type="text/html"/>
+		<id>http://pypy.info/differentiable-programming/</id>
+		<content type="html">&lt;p&gt;得到一个程序有两种方式，其一是由程序员来编写它，其二是通过大量数据来拟合它。也就是所谓的编程和机器学习。&lt;&#x2F;p&gt;
+&lt;p&gt;当我们在编程的时候，我们是在编写整个程序。当我们在机器学习的时候，我们在编写半个程序，剩下的部分，通过数据来拟合而得。&lt;&#x2F;p&gt;
+&lt;p&gt;数据拟合，即通过数据，来反推这个产生这批数据的规律，这个规律相当于代码。&lt;&#x2F;p&gt;
+&lt;p&gt;人脑的规则，和数据的规律，融合成一起，成为最终的程序。&lt;&#x2F;p&gt;
+&lt;p&gt;现在问题来了，如何通过数据反推规律？&lt;&#x2F;p&gt;
+&lt;p&gt;答案就在 “学习” 二字之中。&lt;&#x2F;p&gt;
+&lt;p&gt;所谓学习，就是不断尝试，不断犯错，不断调整，直至不出错。&lt;&#x2F;p&gt;
+&lt;p&gt;所谓机器学习，就是机器通过不断尝试，不断犯错，不断调整，直至不出错。&lt;&#x2F;p&gt;
+&lt;p&gt;这个尝试，反馈，调整的回路，怎么搭建？&lt;&#x2F;p&gt;
+&lt;p&gt;对于一个程序，哪些部分需要学习，哪些部分需要硬编码？&lt;&#x2F;p&gt;
+&lt;p&gt;让我们从一个常量开始。&lt;&#x2F;p&gt;
+&lt;p&gt;比如说，数字 &lt;code&gt;5&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;显然，常量没有任何变化可言，是个硬编码。&lt;&#x2F;p&gt;
+&lt;p&gt;现在，我们来让这个常量产生变化的可能性，让它乘以一个变量 &lt;code&gt;w&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#2b303b;color:#c0c5ce;&quot;&gt;&lt;code&gt;&lt;span&gt;w * 5
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;大功告成，世界上最简单的机器学习程序写好了。&lt;code&gt;5&lt;&#x2F;code&gt; 是人编写的，&lt;code&gt;w&lt;&#x2F;code&gt; 是未知的，需要通过机器学习而得到。&lt;&#x2F;p&gt;
+&lt;p&gt;下一步，我们需要发明一种机制，来不断调整这个 &lt;code&gt;w&lt;&#x2F;code&gt;：&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#2b303b;color:#c0c5ce;&quot;&gt;&lt;code&gt;&lt;span&gt;w = w - dw
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;code&gt;dw&lt;&#x2F;code&gt; 就是 &lt;code&gt;delta w&lt;&#x2F;code&gt;，也就是 &lt;code&gt;w 的变化&lt;&#x2F;code&gt; 的意思。 &lt;code&gt;w = w - dw&lt;&#x2F;code&gt; 就是调整 &lt;code&gt;w&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;下一步，我们需要确定这个  &lt;code&gt;dw&lt;&#x2F;code&gt; 。&lt;&#x2F;p&gt;
+&lt;p&gt;观察我们的程序 &lt;code&gt;w * 5&lt;&#x2F;code&gt;，它的意思是 &lt;code&gt;w&lt;&#x2F;code&gt; 的任何变化，都会被放大 &lt;code&gt;5&lt;&#x2F;code&gt; 倍。&lt;&#x2F;p&gt;
+&lt;p&gt;假如我们把输出记为 &lt;code&gt;y&lt;&#x2F;code&gt;，那么 &lt;code&gt;dy = 5 * dw&lt;&#x2F;code&gt;。即：&lt;code&gt;dw = dy &#x2F; 5&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;有了这个关系，当我们知道了 &lt;code&gt;dy&lt;&#x2F;code&gt;, 就等于知道了 &lt;code&gt;dw&lt;&#x2F;code&gt;，就等于知道了新的 &lt;code&gt;w&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;那么，如何知道 &lt;code&gt;dy&lt;&#x2F;code&gt;？&lt;&#x2F;p&gt;
+&lt;p&gt;既然 &lt;code&gt;y&lt;&#x2F;code&gt; 是我们的输出，那么输出的误差，就是 &lt;code&gt;y&lt;&#x2F;code&gt; 需要调整的变化，即 &lt;code&gt;dy&lt;&#x2F;code&gt;：&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#2b303b;color:#c0c5ce;&quot;&gt;&lt;code&gt;&lt;span&gt;dy = y_guess - y_true
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;其中 &lt;code&gt;y_true&lt;&#x2F;code&gt; 就是我们的数据（学习源），&lt;code&gt;y_guess&lt;&#x2F;code&gt; 是一次尝试的输出。&lt;code&gt;y_guess = w * 5&lt;&#x2F;code&gt; ，随 &lt;code&gt;w&lt;&#x2F;code&gt; 的变化而变化。&lt;&#x2F;p&gt;
+&lt;p&gt;现在只差最后一步，我们就可以跑通这个流程了。这个最后一步是，&lt;code&gt;w&lt;&#x2F;code&gt; 的初始值怎么设置？&lt;&#x2F;p&gt;
+&lt;p&gt;答案很简单，给个随机数就好了，反正它会被自动调节。&lt;&#x2F;p&gt;
+&lt;p&gt;现在，我们用真实数据测试一下这个流程：&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#2b303b;color:#c0c5ce;&quot;&gt;&lt;code&gt;&lt;span&gt;# --- test 1 ---
+&lt;&#x2F;span&gt;&lt;span&gt;y = 15  # 正确答案, 即 w = 3
+&lt;&#x2F;span&gt;&lt;span&gt;w = w0 = 2  # 随机初始化 w 为 2
+&lt;&#x2F;span&gt;&lt;span&gt;y_guess = w * 5  # 2 * 5 = 10
+&lt;&#x2F;span&gt;&lt;span&gt;dy = y_guess - y  # 10 - 15 = -5
+&lt;&#x2F;span&gt;&lt;span&gt;dw = 1&#x2F;5 * dy  # 1&#x2F;5 * -5 = -1
+&lt;&#x2F;span&gt;&lt;span&gt;w = w - dw  # 2 - (-1) = 3  &amp;lt;-- w = 3, y = 15 成功学习到 w = 3
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;# --- test 2 ---
+&lt;&#x2F;span&gt;&lt;span&gt;y = 40  # 正确答案, 即 w = 8
+&lt;&#x2F;span&gt;&lt;span&gt;w = w0 = 12  # 随机初始化 w 为 12
+&lt;&#x2F;span&gt;&lt;span&gt;y_guess = w * 5  # 12 * 5 = 60
+&lt;&#x2F;span&gt;&lt;span&gt;dy = y_guess - y  # 60 - 40 = 20
+&lt;&#x2F;span&gt;&lt;span&gt;dw = 1&#x2F;5 * dy  # 1&#x2F;5 * 20 = 4
+&lt;&#x2F;span&gt;&lt;span&gt;w = w - dw  # 12 - 4 = 8  &amp;lt;-- w = 8, y = 40 成功学习到 w = 8
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;我们从一个特例常量 &lt;code&gt;5&lt;&#x2F;code&gt; 开始，通过 &lt;code&gt;w * 5&lt;&#x2F;code&gt; 来推演这个机器学习的过程。其实把常量换成变量 &lt;code&gt;x&lt;&#x2F;code&gt;，上述的推演同样成立，也就是 &lt;code&gt;y = w * x&lt;&#x2F;code&gt;,  因为 &lt;code&gt;w&lt;&#x2F;code&gt; 的微小变化会被放大 &lt;code&gt;x&lt;&#x2F;code&gt;倍，所以  &lt;code&gt;dy = dw * x&lt;&#x2F;code&gt;,  &lt;code&gt;dw = 1&#x2F;x * d*y&lt;&#x2F;code&gt;。通过特定的的 &lt;code&gt;(x, y)&lt;&#x2F;code&gt; 数据作为学习源，重复上述步骤，可得到正确的 &lt;code&gt;w&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;现在，我们研究出了怎么把变量和常量参数化，并且通过数据学习这个参数的技术。接下来我们更进一步：既然常量和变量都可以参数化，那么函数可不可以参数化？如果这个函数也是一个需要学习的函数呢？&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#2b303b;color:#c0c5ce;&quot;&gt;&lt;code&gt;&lt;span&gt;h(x) = w1 * f(x)  # 参数化函数
+&lt;&#x2F;span&gt;&lt;span&gt;f(x) = w2 * x  # 参数化变量
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;我们能同时学习得到 &lt;code&gt;w1&lt;&#x2F;code&gt; 和 &lt;code&gt;w2&lt;&#x2F;code&gt; 吗？&lt;&#x2F;p&gt;
+&lt;p&gt;照着刚才的思路，我们需要先考察 &lt;code&gt;dw1&lt;&#x2F;code&gt; 和 &lt;code&gt;dw2&lt;&#x2F;code&gt; 。&lt;&#x2F;p&gt;
+&lt;p&gt;对 &lt;code&gt;dw1&lt;&#x2F;code&gt;, 由 &lt;code&gt;w1 * f(x)&lt;&#x2F;code&gt; 可知 &lt;code&gt;w1&lt;&#x2F;code&gt; 的微小变化会被放大 &lt;code&gt;f(x)&lt;&#x2F;code&gt; 倍，所以 &lt;code&gt;d_h(x) =  dw1 * f(x)&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;对 &lt;code&gt;dw2&lt;&#x2F;code&gt;, 由 &lt;code&gt;w2 * x&lt;&#x2F;code&gt; 可知 &lt;code&gt;w2&lt;&#x2F;code&gt; 的微小变化会被放大 &lt;code&gt;x&lt;&#x2F;code&gt; 倍，所以 &lt;code&gt;d_f(x) = dw2 * x&lt;&#x2F;code&gt;； 又由 &lt;code&gt;w1 * f(x)&lt;&#x2F;code&gt; 可知，&lt;code&gt;f(x)&lt;&#x2F;code&gt; 的微小变化会被放大 &lt;code&gt;w1&lt;&#x2F;code&gt; 倍，所以 &lt;code&gt;d_h(x)  = d_f(x) * w1&lt;&#x2F;code&gt;。合并起来就是: &lt;code&gt;d_h(x) = d_f(x) * w1 = (dw2 * x) * w1&lt;&#x2F;code&gt; ，所以：&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#2b303b;color:#c0c5ce;&quot;&gt;&lt;code&gt;&lt;span&gt;dw1 = d_h(x) &#x2F; f(x) = d_h(x) &#x2F; (w2 * x)
+&lt;&#x2F;span&gt;&lt;span&gt;dw2 = d_h(x) &#x2F; w1 &#x2F; x  # 先除以 w1，再除以 x
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;我们按刚才的思路试一下：&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#2b303b;color:#c0c5ce;&quot;&gt;&lt;code&gt;&lt;span&gt;--- 数据
+&lt;&#x2F;span&gt;&lt;span&gt;设 w1 = 3, w2 = 6, x = 2, 则 f(x) = 6x, h(x) = 3f(x) = 18x
+&lt;&#x2F;span&gt;&lt;span&gt;f(2) = 12, h(2) = 36
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;--- 随机初始化 w1, w2
+&lt;&#x2F;span&gt;&lt;span&gt;w1 = 1, w2 = 4
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;--- 调整 10 个循环，结果如下：---
+&lt;&#x2F;span&gt;&lt;span&gt;d_hx = -28, dw1:-3.5, dw2: -14.0, new w1: 4.5, new w2: 18.0
+&lt;&#x2F;span&gt;&lt;span&gt;d_hx = 126.0, dw1:3.5, dw2: 14.0, new w1: 1.0, new w2: 4.0
+&lt;&#x2F;span&gt;&lt;span&gt;d_hx = -28.0, dw1:-3.5, dw2: -14.0, new w1: 4.5, new w2: 18.0
+&lt;&#x2F;span&gt;&lt;span&gt;d_hx = 126.0, dw1:3.5, dw2: 14.0, new w1: 1.0, new w2: 4.0
+&lt;&#x2F;span&gt;&lt;span&gt;d_hx = -28.0, dw1:-3.5, dw2: -14.0, new w1: 4.5, new w2: 18.0
+&lt;&#x2F;span&gt;&lt;span&gt;d_hx = 126.0, dw1:3.5, dw2: 14.0, new w1: 1.0, new w2: 4.0
+&lt;&#x2F;span&gt;&lt;span&gt;d_hx = -28.0, dw1:-3.5, dw2: -14.0, new w1: 4.5, new w2: 18.0
+&lt;&#x2F;span&gt;&lt;span&gt;d_hx = 126.0, dw1:3.5, dw2: 14.0, new w1: 1.0, new w2: 4.0
+&lt;&#x2F;span&gt;&lt;span&gt;d_hx = -28.0, dw1:-3.5, dw2: -14.0, new w1: 4.5, new w2: 18.0
+&lt;&#x2F;span&gt;&lt;span&gt;d_hx = 126.0, dw1:3.5, dw2: 14.0, new w1: 1.0, new w2: 4.0
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;显然，我们遇到了新问题：无论如何调整， &lt;code&gt;w1&lt;&#x2F;code&gt; 和 &lt;code&gt;w2&lt;&#x2F;code&gt; 只是在不停地来回震荡，无法学习到正确的值。&lt;&#x2F;p&gt;
+&lt;p&gt;问题出在哪里？&lt;&#x2F;p&gt;
+&lt;p&gt;问题不在于来回震荡，问题在于震荡幅度每次都一样大，使得这个震荡停不下来。一个钟摆来回摇摆，只要摆动幅度逐渐变小，那么它最终就会停下来。&lt;&#x2F;p&gt;
+&lt;p&gt;所以灵感来了，让我们把震荡幅度每次都变小一点。从数学上表达：&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#2b303b;color:#c0c5ce;&quot;&gt;&lt;code&gt;&lt;span&gt;w = w - dw * learning_rate
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;这个 &lt;code&gt;learning_rate&lt;&#x2F;code&gt; 原本是 &lt;code&gt;1&lt;&#x2F;code&gt; 被我们忽略掉了，当我们取一个&lt;code&gt;大于 0 小于 1 &lt;&#x2F;code&gt;的值时，震荡的幅度就会越来越小。&lt;&#x2F;p&gt;
+&lt;p&gt;现在，取 &lt;code&gt;learning_rate = 0.6&lt;&#x2F;code&gt; 试试：&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#2b303b;color:#c0c5ce;&quot;&gt;&lt;code&gt;&lt;span&gt;--- 数据
+&lt;&#x2F;span&gt;&lt;span&gt;设 w1 = 3, w2 = 6, x = 2, 则 f(x) = 6x, h(x) = 3f(x) = 18x
+&lt;&#x2F;span&gt;&lt;span&gt;f(2) = 12, h(2) = 36
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;--- 随机初始化 w1, w2
+&lt;&#x2F;span&gt;&lt;span&gt;w1 = 1, w2 = 4
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;--- 调整 10 个循环，结果如下：---
+&lt;&#x2F;span&gt;&lt;span&gt;h(x) =  8.0000, d_hx = -28.0000, dw1:-3.5000, dw2: -14.0000, new w1:  3.1000, new w2:  12.4000
+&lt;&#x2F;span&gt;&lt;span&gt;h(x) =  76.8800, d_hx =  40.8800, dw1: 1.6484, dw2:  6.5935, new w1:  2.1110, new w2:  8.4439
+&lt;&#x2F;span&gt;&lt;span&gt;h(x) =  35.6495, d_hx = -0.3505, dw1:-0.0208, dw2: -0.0830, new w1:  2.1234, new w2:  8.4937
+&lt;&#x2F;span&gt;&lt;span&gt;h(x) =  36.0713, d_hx =  0.0713, dw1: 0.0042, dw2:  0.0168, new w1:  2.1209, new w2:  8.4836
+&lt;&#x2F;span&gt;&lt;span&gt;h(x) =  35.9858, d_hx = -0.0142, dw1:-0.0008, dw2: -0.0034, new w1:  2.1214, new w2:  8.4856
+&lt;&#x2F;span&gt;&lt;span&gt;h(x) =  36.0028, d_hx =  0.0028, dw1: 0.0002, dw2:  0.0007, new w1:  2.1213, new w2:  8.4852
+&lt;&#x2F;span&gt;&lt;span&gt;h(x) =  35.9994, d_hx = -0.0006, dw1:-0.0000, dw2: -0.0001, new w1:  2.1213, new w2:  8.4853
+&lt;&#x2F;span&gt;&lt;span&gt;h(x) =  36.0001, d_hx =  0.0001, dw1: 0.0000, dw2:  0.0000, new w1:  2.1213, new w2:  8.4853
+&lt;&#x2F;span&gt;&lt;span&gt;h(x) =  36.0000, d_hx = -0.0000, dw1:-0.0000, dw2: -0.0000, new w1:  2.1213, new w2:  8.4853
+&lt;&#x2F;span&gt;&lt;span&gt;h(x) =  36.0000, d_hx =  0.0000, dw1: 0.0000, dw2:  0.0000, new w1:  2.1213, new w2:  8.4853
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;成功了吗？&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;d_hx&lt;&#x2F;code&gt; 也就是误差的确逐步降低到 0，可是学到的 &lt;code&gt;w1 = 2.1213, w2 = 8.4853&lt;&#x2F;code&gt; ，而我们正确答案是 &lt;code&gt;w1 = 3, w2 = 6&lt;&#x2F;code&gt;。怎么对不上呢？&lt;&#x2F;p&gt;
+&lt;p&gt;细心分析下发现， &lt;code&gt;h(x) = w1 * f(x) = w1 * w2 * x  = (w1 * w2) * x&lt;&#x2F;code&gt; ，我们通过 &lt;code&gt;h(x)&lt;&#x2F;code&gt; 的误差来学习整个函数的表示，学到的是一个整体的结果，也就是 &lt;code&gt;w1 * w2&lt;&#x2F;code&gt;，在正确答案中，&lt;code&gt;w1 * w2  = 3 * 6 = 18&lt;&#x2F;code&gt;， 我们的实验结果：&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;w1 * w2 = 2.1213 * 8.4853 = 17.9999 ~= 18&lt;&#x2F;code&gt; 也是对的。&lt;&#x2F;p&gt;
+&lt;p&gt;也就是说，我们无意中得到了一个因式分解器，因 &lt;code&gt;w1, w2&lt;&#x2F;code&gt; 的初始值不同，我们学习得到不同的参数，这些参数结果对 &lt;code&gt;h(x)&lt;&#x2F;code&gt; 来说，效果都是一样的。有兴趣可以试试。&lt;&#x2F;p&gt;
+&lt;p&gt;现在来总结一下机器学习程序的几个要素：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;参数化，使得学习成为可能&lt;&#x2F;li&gt;
+&lt;li&gt;计算输出误差，并且根据输出误差反推参数误差&lt;&#x2F;li&gt;
+&lt;li&gt;根据参数误差更新参数&lt;&#x2F;li&gt;
+&lt;li&gt;重复 1-3 步&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;目前为止我们的探索集中在第一步参数化。其实对于一个机器学习程序来说，哪些部分需要学习（参数化），哪些部分不需要学习（单纯进行数据变换）应该是很自由的事情，否则就编写不出灵活的程序。对于不需要学习，只是单纯做数据变换的部分，我们只需要保证在反推参数误差时，正确地传递这些误差信息就可以了。&lt;&#x2F;p&gt;
+&lt;p&gt;说得有些抽象，下面举个例子。比方说：&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#2b303b;color:#c0c5ce;&quot;&gt;&lt;code&gt;&lt;span&gt;h(x) = f(x) ^ 2
+&lt;&#x2F;span&gt;&lt;span&gt;f(x) = w * x
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;code&gt;h(x)&lt;&#x2F;code&gt; 是 &lt;code&gt;f(x)&lt;&#x2F;code&gt; 的平方。在这里 &lt;code&gt;h(x)&lt;&#x2F;code&gt; 只是针对 &lt;code&gt;f(x)&lt;&#x2F;code&gt; 的结果做了一个变换（平方），没有任何需要学习的参数。但是，&lt;code&gt;f(x)&lt;&#x2F;code&gt; 是一个需要学习的函数，里边有参数 &lt;code&gt;w&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;要学习 &lt;code&gt;w&lt;&#x2F;code&gt;，我们需要知道 &lt;code&gt;dw&lt;&#x2F;code&gt;；要知道 &lt;code&gt;dw&lt;&#x2F;code&gt;，我们需要知道 &lt;code&gt;d_h(x)&lt;&#x2F;code&gt; 和 &lt;code&gt;dw&lt;&#x2F;code&gt; 的关系。&lt;&#x2F;p&gt;
+&lt;p&gt;我们先不着急找这个关系，先来分析一个更加基本的问题。假如有一个函数 &lt;code&gt;y = a * b&lt;&#x2F;code&gt;，&lt;code&gt;a&lt;&#x2F;code&gt; 和 &lt;code&gt;b&lt;&#x2F;code&gt; 均为变量。那么 &lt;code&gt;dy&lt;&#x2F;code&gt; （y 的变化）其实是由 &lt;code&gt;a&lt;&#x2F;code&gt; 的变化 &lt;code&gt;da&lt;&#x2F;code&gt; ，以及 &lt;code&gt;b&lt;&#x2F;code&gt; 的变化 &lt;code&gt;db&lt;&#x2F;code&gt;所组成。因为 &lt;code&gt;y = a * b&lt;&#x2F;code&gt;，所以 &lt;code&gt;da&lt;&#x2F;code&gt; 会被放大 &lt;code&gt;b&lt;&#x2F;code&gt; 倍贡献到 &lt;code&gt;dy&lt;&#x2F;code&gt;，而 &lt;code&gt;db&lt;&#x2F;code&gt; 会被放大 &lt;code&gt;a&lt;&#x2F;code&gt; 倍贡献到 &lt;code&gt;dy&lt;&#x2F;code&gt;，综合起来就是 &lt;code&gt;dy = a * db + b * da&lt;&#x2F;code&gt;。假如 &lt;code&gt;a = b = x&lt;&#x2F;code&gt;，也就是 &lt;code&gt;y = x * x = x ^ 2&lt;&#x2F;code&gt;， 则有 &lt;code&gt;dy = x * dx + x * dx = 2 * x * dx&lt;&#x2F;code&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;把 &lt;code&gt;x&lt;&#x2F;code&gt; 替换成 &lt;code&gt;f(x)&lt;&#x2F;code&gt;, 所以：&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#2b303b;color:#c0c5ce;&quot;&gt;&lt;code&gt;&lt;span&gt;d_h(x) = 2 * f(x) * d_f(x)
+&lt;&#x2F;span&gt;&lt;span&gt;d_f(x) = dw * x
+&lt;&#x2F;span&gt;&lt;span&gt;--&amp;gt;
+&lt;&#x2F;span&gt;&lt;span&gt;dw = d_h(x) &#x2F; (2 * f(x)) &#x2F; x
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;有了这个关系，代入某个用例验证一下：&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#2b303b;color:#c0c5ce;&quot;&gt;&lt;code&gt;&lt;span&gt;待学习：
+&lt;&#x2F;span&gt;&lt;span&gt;h(x) = f(x) ^ 2
+&lt;&#x2F;span&gt;&lt;span&gt;f(x) = w * x
+&lt;&#x2F;span&gt;&lt;span&gt;w = 8
+&lt;&#x2F;span&gt;&lt;span&gt;---
+&lt;&#x2F;span&gt;&lt;span&gt;初始化：
+&lt;&#x2F;span&gt;&lt;span&gt;w = 2  # 随机
+&lt;&#x2F;span&gt;&lt;span&gt;learning_rate = 0.4
+&lt;&#x2F;span&gt;&lt;span&gt;---
+&lt;&#x2F;span&gt;&lt;span&gt;10 个循环结果：
+&lt;&#x2F;span&gt;&lt;span&gt;out_true: 64.0000, out_guess:  4.0000, d_h_x: -60.0000, d_w: -15.0000, w: 17.0000
+&lt;&#x2F;span&gt;&lt;span&gt;out_true: 256.0000, out_guess:  1156.0000, d_h_x: 900.0000, d_w: 6.6176, w: 10.3824
+&lt;&#x2F;span&gt;&lt;span&gt;out_true: 576.0000, out_guess:  970.1393, d_h_x: 394.1393, d_w: 2.1090, w: 8.2733
+&lt;&#x2F;span&gt;&lt;span&gt;out_true: 1024.0000, out_guess:  1095.1677, d_h_x: 71.1677, d_w: 0.2688, w: 8.0045
+&lt;&#x2F;span&gt;&lt;span&gt;out_true: 1600.0000, out_guess:  1601.8065, d_h_x: 1.8065, d_w: 0.0045, w: 8.0000
+&lt;&#x2F;span&gt;&lt;span&gt;out_true: 2304.0000, out_guess:  2304.0007, d_h_x: 0.0007, d_w: 0.0000, w: 8.0000
+&lt;&#x2F;span&gt;&lt;span&gt;out_true: 3136.0000, out_guess:  3136.0000, d_h_x: 0.0000, d_w: 0.0000, w: 8.0000
+&lt;&#x2F;span&gt;&lt;span&gt;out_true: 4096.0000, out_guess:  4096.0000, d_h_x: 0.0000, d_w: 0.0000, w: 8.0000
+&lt;&#x2F;span&gt;&lt;span&gt;out_true: 5184.0000, out_guess:  5184.0000, d_h_x: 0.0000, d_w: 0.0000, w: 8.0000
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Python 代码在&lt;a href=&quot;https:&#x2F;&#x2F;gist.github.com&#x2F;py0x&#x2F;1083a81285505af6775a54ef5c5188f0&quot;&gt;这里&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;最终成功学习到 &lt;code&gt;w = 8&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;我们可以总结一下，机器学习的函数和普通编程下的函数有两个不同点：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;可能&lt;&#x2F;strong&gt;带有待学习的参数 w&lt;&#x2F;li&gt;
+&lt;li&gt;除了能够正向计算结果，还需要反向计算误差（为了调整参数）&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;只要我们的函数都满足这两点，并且能够这些函数组合起来，就能得到一个能够学习的程序。&lt;&#x2F;p&gt;
+&lt;p&gt;下面，我们来研究函数组合的问题。&lt;&#x2F;p&gt;
+&lt;p&gt;最简单的组合方式是：一个函数的输出是另一个函数的输入。这种情况我们已经通过上文的 &lt;code&gt;h(x)&lt;&#x2F;code&gt;  和 &lt;code&gt;f(x)&lt;&#x2F;code&gt; 无意中研究过。&lt;&#x2F;p&gt;
+&lt;p&gt;在编程视角下，更基本的组合方式是 &lt;code&gt;if ... else ...&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;问题是这种逻辑控制语句，怎么计算和传播误差？&lt;&#x2F;p&gt;
+&lt;p&gt;首先，我们需要把它表示出来。&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#2b303b;color:#c0c5ce;&quot;&gt;&lt;code&gt;&lt;span&gt;if p(x):
+&lt;&#x2F;span&gt;&lt;span&gt;    return f(x)
+&lt;&#x2F;span&gt;&lt;span&gt;else:
+&lt;&#x2F;span&gt;&lt;span&gt;    return h(x)
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;然后进行数学化。&lt;&#x2F;p&gt;
+&lt;p&gt;非此即彼的 &lt;code&gt;if else&lt;&#x2F;code&gt;，在数学上，其实是 1 和 0.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;1 * f(x) + 0 * h(x)&lt;&#x2F;code&gt; 就是 &lt;code&gt;f(x)&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;0 * f(x) + 1 * h(x)&lt;&#x2F;code&gt; 就是 &lt;code&gt;h(x)&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;这个 &lt;code&gt;1&lt;&#x2F;code&gt; 和 &lt;code&gt;0&lt;&#x2F;code&gt; 的逻辑关系需要学习出来，其实就是变成参数：&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#2b303b;color:#c0c5ce;&quot;&gt;&lt;code&gt;&lt;span&gt;w1 * f(x) + w2 * h(x)
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;接下来的问题是，&lt;code&gt;p(x)&lt;&#x2F;code&gt; 怎么和它们关联起来？&lt;&#x2F;p&gt;
+&lt;p&gt;其实细细想一下，这个 &lt;code&gt;w1&lt;&#x2F;code&gt; 和 &lt;code&gt;w2&lt;&#x2F;code&gt; 正是 &lt;code&gt;p(x)&lt;&#x2F;code&gt; 的输出结果。而且 &lt;code&gt;w2 = 1 - w1&lt;&#x2F;code&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;于是我们只要保证 &lt;code&gt;p(x)&lt;&#x2F;code&gt; 的输出范围在 &lt;code&gt;0 ~ 1&lt;&#x2F;code&gt;，那么有：&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#2b303b;color:#c0c5ce;&quot;&gt;&lt;code&gt;&lt;span&gt;w = p(x)
+&lt;&#x2F;span&gt;&lt;span&gt;output = w * f(x) + (1 - w) * h(x)
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;这里需要注意的是，&lt;code&gt;w&lt;&#x2F;code&gt; 并不是直接学习得到的参数，而是 &lt;code&gt;p(x)&lt;&#x2F;code&gt; 的输出结果，我们并不是直接学习 &lt;code&gt;w&lt;&#x2F;code&gt;，而是学习一个 &lt;code&gt;p(x)&lt;&#x2F;code&gt; ，也就是学习 &lt;code&gt;p(x)&lt;&#x2F;code&gt; 内部的参数。为了不容易混淆，我把它换成 &lt;code&gt;k&lt;&#x2F;code&gt;:&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#2b303b;color:#c0c5ce;&quot;&gt;&lt;code&gt;&lt;span&gt;k = p(x)
+&lt;&#x2F;span&gt;&lt;span&gt;output = k * f(x) + (1 - k) * h(x)
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;大功接近告成。剩下的问题是怎么保证 &lt;code&gt;p(x)&lt;&#x2F;code&gt; 的输出落在 0 至 1 之间。&lt;&#x2F;p&gt;
+&lt;p&gt;很简单，套上一个值域在 0 至 1 之间的变换函数即可。&lt;&#x2F;p&gt;
+&lt;p&gt;这种函数有很多，比如可以自己构造一个 &lt;code&gt;1 &#x2F; (1 + f(x) ^ 2)&lt;&#x2F;code&gt;。(这个函数的误差怎么反向传播，可以自己试试）&lt;&#x2F;p&gt;
+&lt;p&gt;至此，我们有了可以学习的 &lt;code&gt;if ... else ...&lt;&#x2F;code&gt; 控制语句。&lt;&#x2F;p&gt;
+&lt;p&gt;有了这个思路，其实查字典也可以数学化表示。&lt;&#x2F;p&gt;
+&lt;p&gt;一个字典，其实是 &lt;code&gt;{k, v}&lt;&#x2F;code&gt; 容器，查字典就是有一个 &lt;code&gt;q&lt;&#x2F;code&gt;, 当 &lt;code&gt;q == k&lt;&#x2F;code&gt; 时，返回对应的 &lt;code&gt;v&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;在机器学习的世界里，&lt;code&gt;(q, k, v)&lt;&#x2F;code&gt; 都是数字。&lt;&#x2F;p&gt;
+&lt;p&gt;判断 &lt;code&gt;q == k&lt;&#x2F;code&gt; 的操作，表达为 &lt;code&gt;q&lt;&#x2F;code&gt; 和 &lt;code&gt;k&lt;&#x2F;code&gt; 的差别，比如说 &lt;code&gt;q - k&lt;&#x2F;code&gt; 的大小。于是有：&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#2b303b;color:#c0c5ce;&quot;&gt;&lt;code&gt;&lt;span&gt;d1 = q - k1
+&lt;&#x2F;span&gt;&lt;span&gt;d2 = q - k2
+&lt;&#x2F;span&gt;&lt;span&gt;d3 = q - k3
+&lt;&#x2F;span&gt;&lt;span&gt;...
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;然后把 &lt;code&gt;d1, d2, d3 ...&lt;&#x2F;code&gt; 进行归一化操作。再把归一化后的结果作为权重 &lt;code&gt;w&lt;&#x2F;code&gt;，去提取 &lt;code&gt;v&lt;&#x2F;code&gt;，也就是 &lt;code&gt;(1-w) * v&lt;&#x2F;code&gt; (需要用 &lt;code&gt;1 - w&lt;&#x2F;code&gt; 是因为差异越小，提取权重越大）。&lt;&#x2F;p&gt;
+&lt;p&gt;归一化比较简单的方式是: &lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#2b303b;color:#c0c5ce;&quot;&gt;&lt;code&gt;&lt;span&gt;w1 = d1 &#x2F; (d1 + d2 + d3 + ... + dn)
+&lt;&#x2F;span&gt;&lt;span&gt;w2 = d2 &#x2F; (d1 + d2 + d3 + ... + dn)
+&lt;&#x2F;span&gt;&lt;span&gt;w3 = d3 &#x2F; (d1 + d2 + d3 + ... + dn)
+&lt;&#x2F;span&gt;&lt;span&gt;...
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;我们现在可以总结一下：&lt;&#x2F;p&gt;
+&lt;p&gt;要使得一个程序能够变成机器学习程序，思路是把所有的操作变成数学公式表达，这个数学公式需要能够反向计算出误差是怎么传播的。&lt;&#x2F;p&gt;
+&lt;p&gt;范式如下：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;输入输出数据转换成数字&lt;&#x2F;li&gt;
+&lt;li&gt;控制操作转换成数学公式&lt;&#x2F;li&gt;
+&lt;li&gt;正向计算结果和误差&lt;&#x2F;li&gt;
+&lt;li&gt;反向根据误差更新参数&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;在机器学习的世界中，一个操作既能正向计算结果，也能反向传播误差并更新参数。当我们把常用的操作封装起来，然后提供一些能组合这些操作的胶水操作，用户就可以像搭积木一样利用我们提供的操作原语 (primitive) 来搭建一个可以学习的程序，这个程序因为参数是未知的，而架构是已知的，所以叫模型。这个行为就是所谓的机器学习建模。&lt;&#x2F;p&gt;
+&lt;p&gt;搭建好的模型，通过大量灌入数据，调整模型参数，就是所谓机器学习训练。&lt;&#x2F;p&gt;
+&lt;p&gt;而本文提到的这种编程范式，有一个正式的名字，叫可微分编程。可微分，指的是这个数学操作可微，使得误差可以反向传播，从而使程序可以自我学习。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;p&gt;后记：&lt;&#x2F;p&gt;
+&lt;p&gt;关于机器学习，这个领域网上有大量优秀的文章和教程，也有很多的细分领域和专业的术语。&lt;&#x2F;p&gt;
+&lt;p&gt;我尝试补充一个更基础、直观且具有启发性的角度。&lt;&#x2F;p&gt;
+</content>
+	</entry>
 	<entry xml:lang="en">
 		<title>简明 Rust 指南 - 理解 Rust Ownership 机制</title>
 		<published>2022-09-24T00:00:00+00:00</published>

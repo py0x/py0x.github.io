@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+  
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>简明机器学习 - 可微分编程 &middot; Me as a method</title>
+    <meta name="description" content="Understanding differentiable Programming" />
+    <link rel="shortcut icon"  href="http://pypy.info/favicon.ico" />
+    <link rel="alternate" type="application/atom+xml" title="RSS" href="http://pypy.info/atom.xml">
+
+    <style>html,body{background:#fffaf7;color:#2d2d2d;font:16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"}a,a:visited{color:darkred;text-decoration:none}a:hover{text-decoration:underline}main{margin:auto;max-width:38rem;padding:0.8rem}pre{background:white;overflow:scroll;padding:1rem}td{border:1px solid #2d2d2d;padding:10px}img{height:auto;max-width:100%}.homepage-list{list-style:none;padding:1rem 0}.homepage-list li{align-items:center;display:flex;flex-wrap:wrap;justify-content:space-between;margin-bottom:10px}@media (max-width: 38rem){.homepage-list li a{width:100%}}
+</style>
+
+    <meta property="og:site_name" content="Me as a method">
+      
+      <meta property="og:title" content="简明机器学习 - 可微分编程">
+      <meta property="og:description" content="Understanding differentiable Programming">
+      <meta property="og:url" content="http://pypy.info/differentiable-programming/">
+      <meta property="og:image" content="">
+
+      <meta property="og:type" content="article" />
+        <meta property="article:published_time" content="2022-10-22T00:00:00+00:00" />
+
+      
+      
+    
+
+  </head>
+  
+
+  <body>
+    <main id="main" role="main">
+
+      
+      <header role="banner">
+        <h3 style="margin-top:0;">
+          <a href="http://pypy.info" title="Home">Me as a method</a>
+          <br /><small>我的想法不是我的，我察觉到了我的想法。</small>
+        </h3>
+      </header>
+      <hr />
+      
+
+      
+<article>
+  <h1>简明机器学习 - 可微分编程</h1>
+
+  
+    <p style="font-size:90%;">Posted on <time datetime="2022-10-22T00:00:00+00:00">October 22, 2022</time></p>
+  
+
+  <p>得到一个程序有两种方式，其一是由程序员来编写它，其二是通过大量数据来拟合它。也就是所谓的编程和机器学习。</p>
+<p>当我们在编程的时候，我们是在编写整个程序。当我们在机器学习的时候，我们在编写半个程序，剩下的部分，通过数据来拟合而得。</p>
+<p>数据拟合，即通过数据，来反推这个产生这批数据的规律，这个规律相当于代码。</p>
+<p>人脑的规则，和数据的规律，融合成一起，成为最终的程序。</p>
+<p>现在问题来了，如何通过数据反推规律？</p>
+<p>答案就在 “学习” 二字之中。</p>
+<p>所谓学习，就是不断尝试，不断犯错，不断调整，直至不出错。</p>
+<p>所谓机器学习，就是机器通过不断尝试，不断犯错，不断调整，直至不出错。</p>
+<p>这个尝试，反馈，调整的回路，怎么搭建？</p>
+<p>对于一个程序，哪些部分需要学习，哪些部分需要硬编码？</p>
+<p>让我们从一个常量开始。</p>
+<p>比如说，数字 <code>5</code>。</p>
+<p>显然，常量没有任何变化可言，是个硬编码。</p>
+<p>现在，我们来让这个常量产生变化的可能性，让它乘以一个变量 <code>w</code>。</p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>w * 5
+</span></code></pre>
+<p>大功告成，世界上最简单的机器学习程序写好了。<code>5</code> 是人编写的，<code>w</code> 是未知的，需要通过机器学习而得到。</p>
+<p>下一步，我们需要发明一种机制，来不断调整这个 <code>w</code>：</p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>w = w - dw
+</span></code></pre>
+<p><code>dw</code> 就是 <code>delta w</code>，也就是 <code>w 的变化</code> 的意思。 <code>w = w - dw</code> 就是调整 <code>w</code>。</p>
+<p>下一步，我们需要确定这个  <code>dw</code> 。</p>
+<p>观察我们的程序 <code>w * 5</code>，它的意思是 <code>w</code> 的任何变化，都会被放大 <code>5</code> 倍。</p>
+<p>假如我们把输出记为 <code>y</code>，那么 <code>dy = 5 * dw</code>。即：<code>dw = dy / 5</code>。</p>
+<p>有了这个关系，当我们知道了 <code>dy</code>, 就等于知道了 <code>dw</code>，就等于知道了新的 <code>w</code>。</p>
+<p>那么，如何知道 <code>dy</code>？</p>
+<p>既然 <code>y</code> 是我们的输出，那么输出的误差，就是 <code>y</code> 需要调整的变化，即 <code>dy</code>：</p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>dy = y_guess - y_true
+</span></code></pre>
+<p>其中 <code>y_true</code> 就是我们的数据（学习源），<code>y_guess</code> 是一次尝试的输出。<code>y_guess = w * 5</code> ，随 <code>w</code> 的变化而变化。</p>
+<p>现在只差最后一步，我们就可以跑通这个流程了。这个最后一步是，<code>w</code> 的初始值怎么设置？</p>
+<p>答案很简单，给个随机数就好了，反正它会被自动调节。</p>
+<p>现在，我们用真实数据测试一下这个流程：</p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span># --- test 1 ---
+</span><span>y = 15  # 正确答案, 即 w = 3
+</span><span>w = w0 = 2  # 随机初始化 w 为 2
+</span><span>y_guess = w * 5  # 2 * 5 = 10
+</span><span>dy = y_guess - y  # 10 - 15 = -5
+</span><span>dw = 1/5 * dy  # 1/5 * -5 = -1
+</span><span>w = w - dw  # 2 - (-1) = 3  &lt;-- w = 3, y = 15 成功学习到 w = 3
+</span><span>
+</span><span>
+</span><span># --- test 2 ---
+</span><span>y = 40  # 正确答案, 即 w = 8
+</span><span>w = w0 = 12  # 随机初始化 w 为 12
+</span><span>y_guess = w * 5  # 12 * 5 = 60
+</span><span>dy = y_guess - y  # 60 - 40 = 20
+</span><span>dw = 1/5 * dy  # 1/5 * 20 = 4
+</span><span>w = w - dw  # 12 - 4 = 8  &lt;-- w = 8, y = 40 成功学习到 w = 8
+</span></code></pre>
+<p>我们从一个特例常量 <code>5</code> 开始，通过 <code>w * 5</code> 来推演这个机器学习的过程。其实把常量换成变量 <code>x</code>，上述的推演同样成立，也就是 <code>y = w * x</code>,  因为 <code>w</code> 的微小变化会被放大 <code>x</code>倍，所以  <code>dy = dw * x</code>,  <code>dw = 1/x * d*y</code>。通过特定的的 <code>(x, y)</code> 数据作为学习源，重复上述步骤，可得到正确的 <code>w</code>。</p>
+<p>现在，我们研究出了怎么把变量和常量参数化，并且通过数据学习这个参数的技术。接下来我们更进一步：既然常量和变量都可以参数化，那么函数可不可以参数化？如果这个函数也是一个需要学习的函数呢？</p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>h(x) = w1 * f(x)  # 参数化函数
+</span><span>f(x) = w2 * x  # 参数化变量
+</span></code></pre>
+<p>我们能同时学习得到 <code>w1</code> 和 <code>w2</code> 吗？</p>
+<p>照着刚才的思路，我们需要先考察 <code>dw1</code> 和 <code>dw2</code> 。</p>
+<p>对 <code>dw1</code>, 由 <code>w1 * f(x)</code> 可知 <code>w1</code> 的微小变化会被放大 <code>f(x)</code> 倍，所以 <code>d_h(x) =  dw1 * f(x)</code>。</p>
+<p>对 <code>dw2</code>, 由 <code>w2 * x</code> 可知 <code>w2</code> 的微小变化会被放大 <code>x</code> 倍，所以 <code>d_f(x) = dw2 * x</code>； 又由 <code>w1 * f(x)</code> 可知，<code>f(x)</code> 的微小变化会被放大 <code>w1</code> 倍，所以 <code>d_h(x)  = d_f(x) * w1</code>。合并起来就是: <code>d_h(x) = d_f(x) * w1 = (dw2 * x) * w1</code> ，所以：</p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>dw1 = d_h(x) / f(x) = d_h(x) / (w2 * x)
+</span><span>dw2 = d_h(x) / w1 / x  # 先除以 w1，再除以 x
+</span></code></pre>
+<p>我们按刚才的思路试一下：</p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>--- 数据
+</span><span>设 w1 = 3, w2 = 6, x = 2, 则 f(x) = 6x, h(x) = 3f(x) = 18x
+</span><span>f(2) = 12, h(2) = 36
+</span><span>
+</span><span>--- 随机初始化 w1, w2
+</span><span>w1 = 1, w2 = 4
+</span><span>
+</span><span>--- 调整 10 个循环，结果如下：---
+</span><span>d_hx = -28, dw1:-3.5, dw2: -14.0, new w1: 4.5, new w2: 18.0
+</span><span>d_hx = 126.0, dw1:3.5, dw2: 14.0, new w1: 1.0, new w2: 4.0
+</span><span>d_hx = -28.0, dw1:-3.5, dw2: -14.0, new w1: 4.5, new w2: 18.0
+</span><span>d_hx = 126.0, dw1:3.5, dw2: 14.0, new w1: 1.0, new w2: 4.0
+</span><span>d_hx = -28.0, dw1:-3.5, dw2: -14.0, new w1: 4.5, new w2: 18.0
+</span><span>d_hx = 126.0, dw1:3.5, dw2: 14.0, new w1: 1.0, new w2: 4.0
+</span><span>d_hx = -28.0, dw1:-3.5, dw2: -14.0, new w1: 4.5, new w2: 18.0
+</span><span>d_hx = 126.0, dw1:3.5, dw2: 14.0, new w1: 1.0, new w2: 4.0
+</span><span>d_hx = -28.0, dw1:-3.5, dw2: -14.0, new w1: 4.5, new w2: 18.0
+</span><span>d_hx = 126.0, dw1:3.5, dw2: 14.0, new w1: 1.0, new w2: 4.0
+</span></code></pre>
+<p>显然，我们遇到了新问题：无论如何调整， <code>w1</code> 和 <code>w2</code> 只是在不停地来回震荡，无法学习到正确的值。</p>
+<p>问题出在哪里？</p>
+<p>问题不在于来回震荡，问题在于震荡幅度每次都一样大，使得这个震荡停不下来。一个钟摆来回摇摆，只要摆动幅度逐渐变小，那么它最终就会停下来。</p>
+<p>所以灵感来了，让我们把震荡幅度每次都变小一点。从数学上表达：</p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>w = w - dw * learning_rate
+</span></code></pre>
+<p>这个 <code>learning_rate</code> 原本是 <code>1</code> 被我们忽略掉了，当我们取一个<code>大于 0 小于 1 </code>的值时，震荡的幅度就会越来越小。</p>
+<p>现在，取 <code>learning_rate = 0.6</code> 试试：</p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>--- 数据
+</span><span>设 w1 = 3, w2 = 6, x = 2, 则 f(x) = 6x, h(x) = 3f(x) = 18x
+</span><span>f(2) = 12, h(2) = 36
+</span><span>
+</span><span>--- 随机初始化 w1, w2
+</span><span>w1 = 1, w2 = 4
+</span><span>
+</span><span>--- 调整 10 个循环，结果如下：---
+</span><span>h(x) =  8.0000, d_hx = -28.0000, dw1:-3.5000, dw2: -14.0000, new w1:  3.1000, new w2:  12.4000
+</span><span>h(x) =  76.8800, d_hx =  40.8800, dw1: 1.6484, dw2:  6.5935, new w1:  2.1110, new w2:  8.4439
+</span><span>h(x) =  35.6495, d_hx = -0.3505, dw1:-0.0208, dw2: -0.0830, new w1:  2.1234, new w2:  8.4937
+</span><span>h(x) =  36.0713, d_hx =  0.0713, dw1: 0.0042, dw2:  0.0168, new w1:  2.1209, new w2:  8.4836
+</span><span>h(x) =  35.9858, d_hx = -0.0142, dw1:-0.0008, dw2: -0.0034, new w1:  2.1214, new w2:  8.4856
+</span><span>h(x) =  36.0028, d_hx =  0.0028, dw1: 0.0002, dw2:  0.0007, new w1:  2.1213, new w2:  8.4852
+</span><span>h(x) =  35.9994, d_hx = -0.0006, dw1:-0.0000, dw2: -0.0001, new w1:  2.1213, new w2:  8.4853
+</span><span>h(x) =  36.0001, d_hx =  0.0001, dw1: 0.0000, dw2:  0.0000, new w1:  2.1213, new w2:  8.4853
+</span><span>h(x) =  36.0000, d_hx = -0.0000, dw1:-0.0000, dw2: -0.0000, new w1:  2.1213, new w2:  8.4853
+</span><span>h(x) =  36.0000, d_hx =  0.0000, dw1: 0.0000, dw2:  0.0000, new w1:  2.1213, new w2:  8.4853
+</span></code></pre>
+<p>成功了吗？</p>
+<p><code>d_hx</code> 也就是误差的确逐步降低到 0，可是学到的 <code>w1 = 2.1213, w2 = 8.4853</code> ，而我们正确答案是 <code>w1 = 3, w2 = 6</code>。怎么对不上呢？</p>
+<p>细心分析下发现， <code>h(x) = w1 * f(x) = w1 * w2 * x  = (w1 * w2) * x</code> ，我们通过 <code>h(x)</code> 的误差来学习整个函数的表示，学到的是一个整体的结果，也就是 <code>w1 * w2</code>，在正确答案中，<code>w1 * w2  = 3 * 6 = 18</code>， 我们的实验结果：</p>
+<p><code>w1 * w2 = 2.1213 * 8.4853 = 17.9999 ~= 18</code> 也是对的。</p>
+<p>也就是说，我们无意中得到了一个因式分解器，因 <code>w1, w2</code> 的初始值不同，我们学习得到不同的参数，这些参数结果对 <code>h(x)</code> 来说，效果都是一样的。有兴趣可以试试。</p>
+<p>现在来总结一下机器学习程序的几个要素：</p>
+<ol>
+<li>参数化，使得学习成为可能</li>
+<li>计算输出误差，并且根据输出误差反推参数误差</li>
+<li>根据参数误差更新参数</li>
+<li>重复 1-3 步</li>
+</ol>
+<p>目前为止我们的探索集中在第一步参数化。其实对于一个机器学习程序来说，哪些部分需要学习（参数化），哪些部分不需要学习（单纯进行数据变换）应该是很自由的事情，否则就编写不出灵活的程序。对于不需要学习，只是单纯做数据变换的部分，我们只需要保证在反推参数误差时，正确地传递这些误差信息就可以了。</p>
+<p>说得有些抽象，下面举个例子。比方说：</p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>h(x) = f(x) ^ 2
+</span><span>f(x) = w * x
+</span></code></pre>
+<p><code>h(x)</code> 是 <code>f(x)</code> 的平方。在这里 <code>h(x)</code> 只是针对 <code>f(x)</code> 的结果做了一个变换（平方），没有任何需要学习的参数。但是，<code>f(x)</code> 是一个需要学习的函数，里边有参数 <code>w</code>。</p>
+<p>要学习 <code>w</code>，我们需要知道 <code>dw</code>；要知道 <code>dw</code>，我们需要知道 <code>d_h(x)</code> 和 <code>dw</code> 的关系。</p>
+<p>我们先不着急找这个关系，先来分析一个更加基本的问题。假如有一个函数 <code>y = a * b</code>，<code>a</code> 和 <code>b</code> 均为变量。那么 <code>dy</code> （y 的变化）其实是由 <code>a</code> 的变化 <code>da</code> ，以及 <code>b</code> 的变化 <code>db</code>所组成。因为 <code>y = a * b</code>，所以 <code>da</code> 会被放大 <code>b</code> 倍贡献到 <code>dy</code>，而 <code>db</code> 会被放大 <code>a</code> 倍贡献到 <code>dy</code>，综合起来就是 <code>dy = a * db + b * da</code>。假如 <code>a = b = x</code>，也就是 <code>y = x * x = x ^ 2</code>， 则有 <code>dy = x * dx + x * dx = 2 * x * dx</code></p>
+<p>把 <code>x</code> 替换成 <code>f(x)</code>, 所以：</p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>d_h(x) = 2 * f(x) * d_f(x)
+</span><span>d_f(x) = dw * x
+</span><span>--&gt;
+</span><span>dw = d_h(x) / (2 * f(x)) / x
+</span></code></pre>
+<p>有了这个关系，代入某个用例验证一下：</p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>待学习：
+</span><span>h(x) = f(x) ^ 2
+</span><span>f(x) = w * x
+</span><span>w = 8
+</span><span>---
+</span><span>初始化：
+</span><span>w = 2  # 随机
+</span><span>learning_rate = 0.4
+</span><span>---
+</span><span>10 个循环结果：
+</span><span>out_true: 64.0000, out_guess:  4.0000, d_h_x: -60.0000, d_w: -15.0000, w: 17.0000
+</span><span>out_true: 256.0000, out_guess:  1156.0000, d_h_x: 900.0000, d_w: 6.6176, w: 10.3824
+</span><span>out_true: 576.0000, out_guess:  970.1393, d_h_x: 394.1393, d_w: 2.1090, w: 8.2733
+</span><span>out_true: 1024.0000, out_guess:  1095.1677, d_h_x: 71.1677, d_w: 0.2688, w: 8.0045
+</span><span>out_true: 1600.0000, out_guess:  1601.8065, d_h_x: 1.8065, d_w: 0.0045, w: 8.0000
+</span><span>out_true: 2304.0000, out_guess:  2304.0007, d_h_x: 0.0007, d_w: 0.0000, w: 8.0000
+</span><span>out_true: 3136.0000, out_guess:  3136.0000, d_h_x: 0.0000, d_w: 0.0000, w: 8.0000
+</span><span>out_true: 4096.0000, out_guess:  4096.0000, d_h_x: 0.0000, d_w: 0.0000, w: 8.0000
+</span><span>out_true: 5184.0000, out_guess:  5184.0000, d_h_x: 0.0000, d_w: 0.0000, w: 8.0000
+</span></code></pre>
+<p>Python 代码在<a href="https://gist.github.com/py0x/1083a81285505af6775a54ef5c5188f0">这里</a></p>
+<p>最终成功学习到 <code>w = 8</code>。</p>
+<p>我们可以总结一下，机器学习的函数和普通编程下的函数有两个不同点：</p>
+<ol>
+<li><strong>可能</strong>带有待学习的参数 w</li>
+<li>除了能够正向计算结果，还需要反向计算误差（为了调整参数）</li>
+</ol>
+<p>只要我们的函数都满足这两点，并且能够这些函数组合起来，就能得到一个能够学习的程序。</p>
+<p>下面，我们来研究函数组合的问题。</p>
+<p>最简单的组合方式是：一个函数的输出是另一个函数的输入。这种情况我们已经通过上文的 <code>h(x)</code>  和 <code>f(x)</code> 无意中研究过。</p>
+<p>在编程视角下，更基本的组合方式是 <code>if ... else ...</code>。</p>
+<p>问题是这种逻辑控制语句，怎么计算和传播误差？</p>
+<p>首先，我们需要把它表示出来。</p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>if p(x):
+</span><span>    return f(x)
+</span><span>else:
+</span><span>    return h(x)
+</span></code></pre>
+<p>然后进行数学化。</p>
+<p>非此即彼的 <code>if else</code>，在数学上，其实是 1 和 0.</p>
+<p><code>1 * f(x) + 0 * h(x)</code> 就是 <code>f(x)</code>。</p>
+<p><code>0 * f(x) + 1 * h(x)</code> 就是 <code>h(x)</code>。</p>
+<p>这个 <code>1</code> 和 <code>0</code> 的逻辑关系需要学习出来，其实就是变成参数：</p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>w1 * f(x) + w2 * h(x)
+</span></code></pre>
+<p>接下来的问题是，<code>p(x)</code> 怎么和它们关联起来？</p>
+<p>其实细细想一下，这个 <code>w1</code> 和 <code>w2</code> 正是 <code>p(x)</code> 的输出结果。而且 <code>w2 = 1 - w1</code></p>
+<p>于是我们只要保证 <code>p(x)</code> 的输出范围在 <code>0 ~ 1</code>，那么有：</p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>w = p(x)
+</span><span>output = w * f(x) + (1 - w) * h(x)
+</span></code></pre>
+<p>这里需要注意的是，<code>w</code> 并不是直接学习得到的参数，而是 <code>p(x)</code> 的输出结果，我们并不是直接学习 <code>w</code>，而是学习一个 <code>p(x)</code> ，也就是学习 <code>p(x)</code> 内部的参数。为了不容易混淆，我把它换成 <code>k</code>:</p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>k = p(x)
+</span><span>output = k * f(x) + (1 - k) * h(x)
+</span></code></pre>
+<p>大功接近告成。剩下的问题是怎么保证 <code>p(x)</code> 的输出落在 0 至 1 之间。</p>
+<p>很简单，套上一个值域在 0 至 1 之间的变换函数即可。</p>
+<p>这种函数有很多，比如可以自己构造一个 <code>1 / (1 + f(x) ^ 2)</code>。(这个函数的误差怎么反向传播，可以自己试试）</p>
+<p>至此，我们有了可以学习的 <code>if ... else ...</code> 控制语句。</p>
+<p>有了这个思路，其实查字典也可以数学化表示。</p>
+<p>一个字典，其实是 <code>{k, v}</code> 容器，查字典就是有一个 <code>q</code>, 当 <code>q == k</code> 时，返回对应的 <code>v</code>。</p>
+<p>在机器学习的世界里，<code>(q, k, v)</code> 都是数字。</p>
+<p>判断 <code>q == k</code> 的操作，表达为 <code>q</code> 和 <code>k</code> 的差别，比如说 <code>q - k</code> 的大小。于是有：</p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>d1 = q - k1
+</span><span>d2 = q - k2
+</span><span>d3 = q - k3
+</span><span>...
+</span></code></pre>
+<p>然后把 <code>d1, d2, d3 ...</code> 进行归一化操作。再把归一化后的结果作为权重 <code>w</code>，去提取 <code>v</code>，也就是 <code>(1-w) * v</code> (需要用 <code>1 - w</code> 是因为差异越小，提取权重越大）。</p>
+<p>归一化比较简单的方式是: </p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>w1 = d1 / (d1 + d2 + d3 + ... + dn)
+</span><span>w2 = d2 / (d1 + d2 + d3 + ... + dn)
+</span><span>w3 = d3 / (d1 + d2 + d3 + ... + dn)
+</span><span>...
+</span></code></pre>
+<p>我们现在可以总结一下：</p>
+<p>要使得一个程序能够变成机器学习程序，思路是把所有的操作变成数学公式表达，这个数学公式需要能够反向计算出误差是怎么传播的。</p>
+<p>范式如下：</p>
+<ol>
+<li>输入输出数据转换成数字</li>
+<li>控制操作转换成数学公式</li>
+<li>正向计算结果和误差</li>
+<li>反向根据误差更新参数</li>
+</ol>
+<p>在机器学习的世界中，一个操作既能正向计算结果，也能反向传播误差并更新参数。当我们把常用的操作封装起来，然后提供一些能组合这些操作的胶水操作，用户就可以像搭积木一样利用我们提供的操作原语 (primitive) 来搭建一个可以学习的程序，这个程序因为参数是未知的，而架构是已知的，所以叫模型。这个行为就是所谓的机器学习建模。</p>
+<p>搭建好的模型，通过大量灌入数据，调整模型参数，就是所谓机器学习训练。</p>
+<p>而本文提到的这种编程范式，有一个正式的名字，叫可微分编程。可微分，指的是这个数学操作可微，使得误差可以反向传播，从而使程序可以自我学习。</p>
+<hr />
+<p>后记：</p>
+<p>关于机器学习，这个领域网上有大量优秀的文章和教程，也有很多的细分领域和专业的术语。</p>
+<p>我尝试补充一个更基础、直观且具有启发性的角度。</p>
+
+</article>
+
+
+      
+      <footer role="contentinfo">
+        <hr />
+        
+        
+        <small>
+          Maintained with &hearts; for the web.<br />
+          Email: py@pypy.info
+        </small>
+        
+      </footer>
+      
+
+    </main>
+    
+    
+  </body>
+</html>
+
