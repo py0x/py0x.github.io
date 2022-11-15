@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>深入理解 Rust - References and Borrowing &middot; Me as a method</title>
+    <meta name="description" content="Understanding references and borrowing in Rust" />
+    <link rel="shortcut icon"  href="http://pypy.info/favicon.ico" />
+    <link rel="alternate" type="application/atom+xml" title="RSS" href="http://pypy.info/atom.xml">
+
+    <style>html,body{background:#fffaf7;color:#2d2d2d;font:16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"}a,a:visited{color:darkred;text-decoration:none}a:hover{text-decoration:underline}main{margin:auto;max-width:38rem;padding:0.8rem}pre{background:white;overflow:scroll;padding:1rem}td{border:1px solid #2d2d2d;padding:10px}img{height:auto;max-width:100%}.homepage-list{list-style:none;padding:1rem 0}.homepage-list li{align-items:center;display:flex;flex-wrap:wrap;justify-content:space-between;margin-bottom:10px}@media (max-width: 38rem){.homepage-list li a{width:100%}}
+</style>
+
+    <meta property="og:site_name" content="Me as a method">
+      
+      <meta property="og:title" content="深入理解 Rust - References and Borrowing">
+      <meta property="og:description" content="Understanding references and borrowing in Rust">
+      <meta property="og:url" content="http://pypy.info/rust-borrow/">
+      <meta property="og:image" content="">
+
+      <meta property="og:type" content="article" />
+        <meta property="article:published_time" content="2022-10-25T00:00:00+00:00" />
+
+      
+      
+    
+
+  </head>
+  
+
+  <body>
+    <main id="main" role="main">
+
+      
+      <header role="banner">
+        <h3 style="margin-top:0;">
+          <a href="http://pypy.info" title="Home">Me as a method</a>
+          <br /><small>我的想法不是我的，我察觉到了我的想法。</small>
+        </h3>
+      </header>
+      <hr />
+      
+
+      
+<article>
+  <h1>深入理解 Rust - References and Borrowing</h1>
+
+  
+    <p style="font-size:90%;">Posted on <time datetime="2022-10-25T00:00:00+00:00">October 25, 2022</time></p>
+  
+
+  <p>指针是万恶之源。</p>
+<p>你不拥有这块数据，你只是有一个指向这块数据的地址（数据引用）。如果数据被删了，被改了，你根本就不知道。换言之，你所依赖的这块数据并不安全。因为你担心别的代码对它动手脚。很多 bug 就是这么出现的，data race, dangling pointer，等等等等。</p>
+<p>细想一下，数据的安全性主要由两个因素控制：</p>
+<ol>
+<li>共享性：数据是否共享，是否存在多个引用？</li>
+<li>可变性：数据是否允许被修改？</li>
+</ol>
+<p>换言之，一块数据之所以会不安全，是因为它同时满足了共享性和可变性。有这块数据引用的可能不止一个地方，而且都能修改这块数据，我们就开始担心别的引用会修改这块数据，破坏我的这块代码的假设。</p>
+<p>于是，要想得到数据安全，只需要：</p>
+<ol>
+<li>禁止数据共享: 不允许共享数据 (unsharable)</li>
+<li>禁止数据可变：不允许修改数据 (immutable)</li>
+</ol>
+<p>禁止数据共享。这个好理解，如果这块数据是你独享的，只有你一个引用，那么别的代码不可能对它动手脚，数据是安全的。</p>
+<p>禁止数据可变。是函数式的思路，比如 Haskell，不允许有副作用，要想改就基于旧的创建一个新的，数据手递手传递。这样你依赖一个数据，就可以放心地假设它不会被别人悄悄地修改。比如依赖一个字典，可以肯定这个字典的 key-values 不会被悄悄地改掉。</p>
+<p>Rust 保护数据安全的机制就是这两个思路的组合：<strong>如果你要允许一个引用修改数据，那么就不允许创建多个引用 (共享数据）。如果你要创建多个引用 (共享数据)，那么就不允许这些引用修改数据。</strong></p>
+<p><a href="https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html">官方文档</a>对这个理念的表达是：</p>
+<blockquote>
+<p>At any given time, you can have either one mutable reference or any number of immutable references.</p>
+</blockquote>
+<p>（值得注意的是，这是一个静态约束，即编译期就可以检查的保证）</p>
+<p>但凡事总有例外。</p>
+<p>有些场景下，这个规则是必须得破坏掉的，否则便实现不了所需要的功能。</p>
+<p>比如要实现一个共享 <code>cache</code>，程序的多个地方通过引用指向同一个 <code>cache</code> 对象来使用这个 <code>cache</code>。也就是说，共享 <code>cache</code> 的引用可能有多个（否则就称不上共享了）。</p>
+<p>而对一个 <code>cache</code> 的主要使用方式，其实就是读和写。先读一下，如果发现 cache miss，那么就去获取这个 miss 的数据，然后写回 cache。也就是说，<code>cache</code> 的引用必须支持修改数据（缓存需要：存）。</p>
+<p>在共享 <code>cache</code> 这个场景下，我们既要能共享数据，又要能修改数据。既要共享性，也要可变性。上文提到的规则不适用了。</p>
+<p>Rust 提供了另一个机制来处理这种场景。官方说法叫<a href="https://doc.rust-lang.org/book/ch15-05-interior-mutability.html">内部可变性(interior-mutability)</a>。其实它的真正意思是：共享可变性(shared-mutability)。</p>
+<p>共享可变性在运行期，而不是编译期来保证数据安全。核心做法是使用 <a href="https://doc.rust-lang.org/reference/interior-mutability.html"><code>Cell</code> 类型</a>。</p>
+<p>总结一下：</p>
+<ol>
+<li>Rust 引用有两种：共享性引用(<code>&amp;</code>)和可变性引用(<code>&amp;mut</code>)</li>
+<li>共享性引用和可变性引用在编译期互斥。要么有一个可变性引用(<code>&amp;mut</code>)，要么有任意数量的共享性引用(<code>&amp;</code>)，而不能同时有二者存在。</li>
+<li>共享性引用可以使用 <a href="https://doc.rust-lang.org/reference/interior-mutability.html"><code>Cell</code> 类型</a> 使其在运行时可变，以满足共享且可变的场景。</li>
+</ol>
+<hr />
+<p>后记：</p>
+<p>为了加深理解，可变性引用(<code>&amp;mut</code>) 可以理解成互斥性引用。它的 <code>mut</code> 其实可以理解为互斥锁 <code>mutex</code> 的 <code>mut</code>，而不是 <code>mutable</code> 的 <code>mut</code>。</p>
+<p>慢慢就会发现，Rust 中的 <code>mut</code> 关键字，基本上就是互斥的意思。</p>
+
+</article>
+
+
+      
+      <footer role="contentinfo">
+        <hr />
+        
+        
+        <small>
+          Maintained with &hearts; for the web.<br />
+          Email: py@pypy.info
+        </small>
+        
+      </footer>
+      
+
+    </main>
+    
+    
+  </body>
+</html>
+

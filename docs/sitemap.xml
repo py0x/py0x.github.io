@@ -8,6 +8,10 @@
         <lastmod>2022-10-22</lastmod>
     </url>
     <url>
+        <loc>http://pypy.info/rust-borrow/</loc>
+        <lastmod>2022-10-25</lastmod>
+    </url>
+    <url>
         <loc>http://pypy.info/rust-ownership/</loc>
         <lastmod>2022-09-24</lastmod>
     </url>

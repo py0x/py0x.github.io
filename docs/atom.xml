@@ -5,8 +5,54 @@
 	<link href="http://pypy.info/atom.xml" rel="self" type="application/atom+xml"/>
   <link href="http://pypy.info"/>
 	<generator uri="https://www.getzola.org/">Zola</generator>
-	<updated>2022-10-22T00:00:00+00:00</updated>
+	<updated>2022-10-25T00:00:00+00:00</updated>
 	<id>http://pypy.info/atom.xml</id>
+	<entry xml:lang="en">
+		<title>深入理解 Rust - References and Borrowing</title>
+		<published>2022-10-25T00:00:00+00:00</published>
+		<updated>2022-10-25T00:00:00+00:00</updated>
+		<link rel="alternate" href="http://pypy.info/rust-borrow/" type="text/html"/>
+		<id>http://pypy.info/rust-borrow/</id>
+		<content type="html">&lt;p&gt;指针是万恶之源。&lt;&#x2F;p&gt;
+&lt;p&gt;你不拥有这块数据，你只是有一个指向这块数据的地址（数据引用）。如果数据被删了，被改了，你根本就不知道。换言之，你所依赖的这块数据并不安全。因为你担心别的代码对它动手脚。很多 bug 就是这么出现的，data race, dangling pointer，等等等等。&lt;&#x2F;p&gt;
+&lt;p&gt;细想一下，数据的安全性主要由两个因素控制：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;共享性：数据是否共享，是否存在多个引用？&lt;&#x2F;li&gt;
+&lt;li&gt;可变性：数据是否允许被修改？&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;换言之，一块数据之所以会不安全，是因为它同时满足了共享性和可变性。有这块数据引用的可能不止一个地方，而且都能修改这块数据，我们就开始担心别的引用会修改这块数据，破坏我的这块代码的假设。&lt;&#x2F;p&gt;
+&lt;p&gt;于是，要想得到数据安全，只需要：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;禁止数据共享: 不允许共享数据 (unsharable)&lt;&#x2F;li&gt;
+&lt;li&gt;禁止数据可变：不允许修改数据 (immutable)&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;禁止数据共享。这个好理解，如果这块数据是你独享的，只有你一个引用，那么别的代码不可能对它动手脚，数据是安全的。&lt;&#x2F;p&gt;
+&lt;p&gt;禁止数据可变。是函数式的思路，比如 Haskell，不允许有副作用，要想改就基于旧的创建一个新的，数据手递手传递。这样你依赖一个数据，就可以放心地假设它不会被别人悄悄地修改。比如依赖一个字典，可以肯定这个字典的 key-values 不会被悄悄地改掉。&lt;&#x2F;p&gt;
+&lt;p&gt;Rust 保护数据安全的机制就是这两个思路的组合：&lt;strong&gt;如果你要允许一个引用修改数据，那么就不允许创建多个引用 (共享数据）。如果你要创建多个引用 (共享数据)，那么就不允许这些引用修改数据。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;a href=&quot;https:&#x2F;&#x2F;doc.rust-lang.org&#x2F;book&#x2F;ch04-02-references-and-borrowing.html&quot;&gt;官方文档&lt;&#x2F;a&gt;对这个理念的表达是：&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;At any given time, you can have either one mutable reference or any number of immutable references.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;（值得注意的是，这是一个静态约束，即编译期就可以检查的保证）&lt;&#x2F;p&gt;
+&lt;p&gt;但凡事总有例外。&lt;&#x2F;p&gt;
+&lt;p&gt;有些场景下，这个规则是必须得破坏掉的，否则便实现不了所需要的功能。&lt;&#x2F;p&gt;
+&lt;p&gt;比如要实现一个共享 &lt;code&gt;cache&lt;&#x2F;code&gt;，程序的多个地方通过引用指向同一个 &lt;code&gt;cache&lt;&#x2F;code&gt; 对象来使用这个 &lt;code&gt;cache&lt;&#x2F;code&gt;。也就是说，共享 &lt;code&gt;cache&lt;&#x2F;code&gt; 的引用可能有多个（否则就称不上共享了）。&lt;&#x2F;p&gt;
+&lt;p&gt;而对一个 &lt;code&gt;cache&lt;&#x2F;code&gt; 的主要使用方式，其实就是读和写。先读一下，如果发现 cache miss，那么就去获取这个 miss 的数据，然后写回 cache。也就是说，&lt;code&gt;cache&lt;&#x2F;code&gt; 的引用必须支持修改数据（缓存需要：存）。&lt;&#x2F;p&gt;
+&lt;p&gt;在共享 &lt;code&gt;cache&lt;&#x2F;code&gt; 这个场景下，我们既要能共享数据，又要能修改数据。既要共享性，也要可变性。上文提到的规则不适用了。&lt;&#x2F;p&gt;
+&lt;p&gt;Rust 提供了另一个机制来处理这种场景。官方说法叫&lt;a href=&quot;https:&#x2F;&#x2F;doc.rust-lang.org&#x2F;book&#x2F;ch15-05-interior-mutability.html&quot;&gt;内部可变性(interior-mutability)&lt;&#x2F;a&gt;。其实它的真正意思是：共享可变性(shared-mutability)。&lt;&#x2F;p&gt;
+&lt;p&gt;共享可变性在运行期，而不是编译期来保证数据安全。核心做法是使用 &lt;a href=&quot;https:&#x2F;&#x2F;doc.rust-lang.org&#x2F;reference&#x2F;interior-mutability.html&quot;&gt;&lt;code&gt;Cell&lt;&#x2F;code&gt; 类型&lt;&#x2F;a&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;总结一下：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;Rust 引用有两种：共享性引用(&lt;code&gt;&amp;amp;&lt;&#x2F;code&gt;)和可变性引用(&lt;code&gt;&amp;amp;mut&lt;&#x2F;code&gt;)&lt;&#x2F;li&gt;
+&lt;li&gt;共享性引用和可变性引用在编译期互斥。要么有一个可变性引用(&lt;code&gt;&amp;amp;mut&lt;&#x2F;code&gt;)，要么有任意数量的共享性引用(&lt;code&gt;&amp;amp;&lt;&#x2F;code&gt;)，而不能同时有二者存在。&lt;&#x2F;li&gt;
+&lt;li&gt;共享性引用可以使用 &lt;a href=&quot;https:&#x2F;&#x2F;doc.rust-lang.org&#x2F;reference&#x2F;interior-mutability.html&quot;&gt;&lt;code&gt;Cell&lt;&#x2F;code&gt; 类型&lt;&#x2F;a&gt; 使其在运行时可变，以满足共享且可变的场景。&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;hr &#x2F;&gt;
+&lt;p&gt;后记：&lt;&#x2F;p&gt;
+&lt;p&gt;为了加深理解，可变性引用(&lt;code&gt;&amp;amp;mut&lt;&#x2F;code&gt;) 可以理解成互斥性引用。它的 &lt;code&gt;mut&lt;&#x2F;code&gt; 其实可以理解为互斥锁 &lt;code&gt;mutex&lt;&#x2F;code&gt; 的 &lt;code&gt;mut&lt;&#x2F;code&gt;，而不是 &lt;code&gt;mutable&lt;&#x2F;code&gt; 的 &lt;code&gt;mut&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;慢慢就会发现，Rust 中的 &lt;code&gt;mut&lt;&#x2F;code&gt; 关键字，基本上就是互斥的意思。&lt;&#x2F;p&gt;
+</content>
+	</entry>
 	<entry xml:lang="en">
 		<title>简明机器学习 - 可微分编程</title>
 		<published>2022-10-22T00:00:00+00:00</published>
