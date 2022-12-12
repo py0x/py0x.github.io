@@ -5,8 +5,124 @@
 	<link href="http://pypy.info/atom.xml" rel="self" type="application/atom+xml"/>
   <link href="http://pypy.info"/>
 	<generator uri="https://www.getzola.org/">Zola</generator>
-	<updated>2022-10-25T00:00:00+00:00</updated>
+	<updated>2022-10-30T00:00:00+00:00</updated>
 	<id>http://pypy.info/atom.xml</id>
+	<entry xml:lang="en">
+		<title>Rust 实战 - 从零编写 JSON Parser</title>
+		<published>2022-10-30T00:00:00+00:00</published>
+		<updated>2022-10-30T00:00:00+00:00</updated>
+		<link rel="alternate" href="http://pypy.info/rust-parser-combinator/" type="text/html"/>
+		<id>http://pypy.info/rust-parser-combinator/</id>
+		<content type="html">&lt;h3 id=&quot;show-you-the-code&quot;&gt;Show you the code&lt;&#x2F;h3&gt;
+&lt;p&gt;古语有云，Talk is cheap. 在进行 cheap talk 之前，先放上代码。&lt;&#x2F;p&gt;
+&lt;p&gt;实现分两层，1. 通用 Parser Combinator 库 parcomb，2. 基于 parcomb 实现的 JSON parser。&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;py0x&#x2F;parcomb&#x2F;blob&#x2F;main&#x2F;examples&#x2F;json.rs&quot;&gt;JSON Parser 实现 (基于 parcomb)&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;py0x&#x2F;parcomb&quot;&gt;parcomb 完整代码&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;si-lu&quot;&gt;思路&lt;&#x2F;h3&gt;
+&lt;p&gt;写 Parser 是熟悉一门编程语言很好的方式。虽说 Parsing 的技术林林总总，其实不需要太在意，我们可以从简单开始。&lt;&#x2F;p&gt;
+&lt;p&gt;一个 Parser 实则上是一个模式识别器 (Pattern Matching), 通过匹配输入数据中的模式，若匹配成功，返回一个值。&lt;&#x2F;p&gt;
+&lt;p&gt;最常见的 Parser 莫过于正则表达式 (Regex)。正则表达式的问题在于它只能识别线性的模式，换言之，它无法递归地进行模式识别。&lt;&#x2F;p&gt;
+&lt;p&gt;所以正则表达式一般用来匹配一些非结构化的字符串。一旦遇到结构化的字符串，比如 JSON 或程序语言，就无能为力了。&lt;&#x2F;p&gt;
+&lt;p&gt;JSON 是个递归嵌套结构，意思是它允许字典套字典，字典套数组，数组又套字典，等等。&lt;&#x2F;p&gt;
+&lt;p&gt;要识别这种递归结构的字符串，我们需要一个支持递归地识别的 Parser。这种 Parser 叫递归下降 (recursive descent) Parser。&lt;&#x2F;p&gt;
+&lt;p&gt;Parser 叫什么并不重要。我们的重点在于 &lt;strong&gt;递归&lt;&#x2F;strong&gt; 二字。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;di-gui&quot;&gt;递归&lt;&#x2F;h3&gt;
+&lt;p&gt;递归，是一种自然界的规则。它的意思有两层，1. 循环，2. 相似。自然界中大部分东西都符合递归法则，也就是分形，比如树和叶，山和石。&lt;&#x2F;p&gt;
+&lt;p&gt;有了递归，我们完全不需要 for&#x2F;while 这种循环控制语句，就可以构造循环。只需要函数反复调用自己并更新调用参数即可。&lt;&#x2F;p&gt;
+&lt;p&gt;如果我们把 Parser 表达为一个函数，那么只要在 Parser 里调用其它的 Parser，就能实现支持递归地识别的 Parser。&lt;&#x2F;p&gt;
+&lt;p&gt;这意味着，我们的 Parser 完全可以通过组合其它的 Parser 得到。形如：&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#2b303b;color:#c0c5ce;&quot;&gt;&lt;code&gt;&lt;span&gt;ParserA = ParserB + ParserC
+&lt;&#x2F;span&gt;&lt;span&gt;ParserD = ParserE - ParserF
+&lt;&#x2F;span&gt;&lt;span&gt;...
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;这也意味着，我们会有：1. 基本的 Parser,  2. Parser 胶水（基于基本 Parser 组合出复杂 Parser）&lt;&#x2F;p&gt;
+&lt;p&gt;这个 2. Parser 胶水， 正式名字叫 &lt;a href=&quot;https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Parser_combinator&quot;&gt;Parser Combinator&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;理论就是这么简单，有意思的是用 Rust 去实现这些理论。&lt;&#x2F;p&gt;
+&lt;p&gt;因为 Rust 独特的语言特性，使得这个实现有了更多的乐趣。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;shi-xian-he-she-ji&quot;&gt;实现和设计&lt;&#x2F;h3&gt;
+&lt;p&gt;我们先来定义 Parser。&lt;&#x2F;p&gt;
+&lt;p&gt;函数式的想法是最自然的：&lt;strong&gt;一个 Parser 就是一个函数&lt;&#x2F;strong&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;而 Parser Combinator，所谓的胶水，无非就是一种高阶函数：&lt;strong&gt;接受 Parser 作为输入，返回 Parser 作为输出（接受函数，返回函数）&lt;&#x2F;strong&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;下一步，我们只需要把 Parser 的函数签名(function signature) 固定下来，不同类型的 Parsers 就可以通过胶水自由组合，最终组合成一个具有特定业务目的的 Parser。&lt;&#x2F;p&gt;
+&lt;p&gt;而在 Rust 的语境下，我们不首先考虑函数作为抽象单元。我们用 &lt;a href=&quot;https:&#x2F;&#x2F;doc.rust-lang.org&#x2F;book&#x2F;ch10-02-traits.html&quot;&gt;Traits(接口)&lt;&#x2F;a&gt; 做高层抽象。也就是说：&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Parser 就是一个 Trait&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;然后定义这个 Parser Trait 的行为和输入输出，如下：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#2b303b;color:#c0c5ce;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;pub type &lt;&#x2F;span&gt;&lt;span&gt;ParseResult&amp;lt;I, O, E&amp;gt; = Result&amp;lt;(O, I), E&amp;gt;;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;pub trait &lt;&#x2F;span&gt;&lt;span&gt;Parser&amp;lt;I, O, E&amp;gt;
+&lt;&#x2F;span&gt;&lt;span&gt;where
+&lt;&#x2F;span&gt;&lt;span&gt;    I: ?Sized,
+&lt;&#x2F;span&gt;&lt;span&gt;{
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;color:#8fa1b3;&quot;&gt;parse&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;&amp;#39;a&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt;(&amp;amp;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#bf616a;&quot;&gt;self&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#bf616a;&quot;&gt;input&lt;&#x2F;span&gt;&lt;span&gt;: &amp;amp;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;&amp;#39;a&lt;&#x2F;span&gt;&lt;span&gt; I) -&amp;gt; ParseResult&amp;lt;&amp;amp;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;&amp;#39;a&lt;&#x2F;span&gt;&lt;span&gt; I, O, E&amp;gt;;
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;code&gt;parse&lt;&#x2F;code&gt; 方法接受一个输入 &lt;code&gt;&amp;amp;I&lt;&#x2F;code&gt;，若成功，则返回结果 &lt;code&gt;O&lt;&#x2F;code&gt; 及剩下未用完的 &lt;code&gt;&amp;amp;I&lt;&#x2F;code&gt;，若出错，返回 &lt;code&gt;E&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;值得注意的是，这几个 &lt;code&gt;I&lt;&#x2F;code&gt;, &lt;code&gt;O&lt;&#x2F;code&gt;, &lt;code&gt;E&lt;&#x2F;code&gt; 都是泛型 (Generic Types)。这意味着我们可以为这个 Parser Trait 提供各种各样的具体实现，去支持 str，bytes 等各种各样的 parse 需求。&lt;&#x2F;p&gt;
+&lt;p&gt;中间接口层一定，剩下的事情就好办了：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;往上走，&lt;strong&gt;使用这个接口&lt;&#x2F;strong&gt;, 实现高层逻辑，即：基于这个 Parser 接口去实现各种 Parser Combinators；&lt;&#x2F;li&gt;
+&lt;li&gt;往下走，&lt;strong&gt;实现这个接口&lt;&#x2F;strong&gt;, 提供底层逻辑，即：为各种各样的具体的类型去实现这个 Parser 接口。&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;也就是&lt;a href=&quot;https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Dependency_inversion_principle&quot;&gt;依赖反转原则 Dependency inversion principle&lt;&#x2F;a&gt; 的应用。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;xiang-shang-shi-xian-parser-combinator&quot;&gt;向上实现：Parser Combinator&lt;&#x2F;h3&gt;
+&lt;p&gt;对 Parser Combinator 的实现，我们首要考虑的是提供哪些胶水操作 (primitives)。&lt;&#x2F;p&gt;
+&lt;p&gt;正则表达式其实已经提供了很好的思路，&lt;code&gt;and&lt;&#x2F;code&gt;, &lt;code&gt;or&lt;&#x2F;code&gt;, &lt;code&gt;*&lt;&#x2F;code&gt;, &lt;code&gt;+&lt;&#x2F;code&gt; &lt;code&gt;!&lt;&#x2F;code&gt;, &lt;code&gt;?&lt;&#x2F;code&gt; ...&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;and&lt;&#x2F;code&gt; 操作: &lt;code&gt;p1 and p2&lt;&#x2F;code&gt;，就是先使用 &lt;code&gt;p1&lt;&#x2F;code&gt; 来 parse，若成功，则使用 &lt;code&gt;p2&lt;&#x2F;code&gt; 来 parse，然后返回结果 &lt;code&gt;(o1, o2)&lt;&#x2F;code&gt; ;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;or&lt;&#x2F;code&gt; 操作：&lt;code&gt;p1 or p1&lt;&#x2F;code&gt;，就是先尝试使用 &lt;code&gt;p1&lt;&#x2F;code&gt; 来 parse，若失败，则继续尝试 &lt;code&gt;p2&lt;&#x2F;code&gt; ;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;*&lt;&#x2F;code&gt; 操作：&lt;code&gt;p1*&lt;&#x2F;code&gt;, 就是连续使用 &lt;code&gt;p1&lt;&#x2F;code&gt; 来 parse 0 次到多次，直到失败。&lt;&#x2F;li&gt;
+&lt;li&gt;...&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;剩下的我就不一一列举了，可以参考 &lt;a href=&quot;https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Parsing_expression_grammar&quot;&gt;PEG(Parsing Expression Grammar)&lt;&#x2F;a&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;PEG&lt;&#x2F;code&gt; 和 &lt;code&gt;Regex&lt;&#x2F;code&gt; 很像，区别在于 &lt;code&gt;Regex&lt;&#x2F;code&gt; 的基本元素是字符，组合的是字符，不能递归，而 &lt;code&gt;PEG&lt;&#x2F;code&gt; 的基本元素是 Parser，组合的是 Parser，可以递归。&lt;&#x2F;p&gt;
+&lt;p&gt;我们实现的话，不用太照本宣科，抓住关键，然后实现一些自己需要的操作即可。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;parcomb&lt;&#x2F;code&gt; 的这些胶水操作，每个操作我都选择了用一个特定的类型 &lt;code&gt;Struct&lt;&#x2F;code&gt; 去表示和实现，然后为每个 &lt;code&gt;Struct&lt;&#x2F;code&gt;  都实现 Parser 这个 Trait，这样所有操作就满足了&lt;a href=&quot;https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Closure_(mathematics)&quot;&gt;闭包性质&lt;&#x2F;a&gt;，可以自由组合了。&lt;&#x2F;p&gt;
+&lt;p&gt;代码见: &lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;py0x&#x2F;parcomb&#x2F;blob&#x2F;main&#x2F;src&#x2F;parser.rs&quot;&gt;这里&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;这个实现过程其实有不少有意思地方。比如：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;Parser Combinator 是选择静态地组合 Parser (impl Trait)，还是动态地组合 Parser (dyn Trait)？&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;Rust 支持为所有符合条件的函数&#x2F;闭包自动实现 Parser Trait，方便使用。&lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;py0x&#x2F;parcomb&#x2F;blob&#x2F;main&#x2F;src&#x2F;parser.rs#L111&quot;&gt;参考这里&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Accept interfaces, return structs&lt;&#x2F;strong&gt; 原则的再体会 (其实这个是当初写 Go 语言时学习到的一个原则)。因为 Rust 的类型系统和抽象特性更强大，这个原则对 Rust 甚至更加实用：This suggests that it makes sense to make the argument types of a function as general as possible and the return types as specific as possible。&lt;a href=&quot;https:&#x2F;&#x2F;www.reddit.com&#x2F;r&#x2F;golang&#x2F;comments&#x2F;dfe1qr&#x2F;who_first_said_accept_interfaces_and_return&#x2F;&quot;&gt;参考这里&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;...&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;实现一次 Parser Combinator，即可对 Rust 的核心语言特性 (Trait, Generic Type) 有很好的感觉。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;xiang-xia-shi-xian-string-parser&quot;&gt;向下实现：String Parser&lt;&#x2F;h3&gt;
+&lt;p&gt;我们的 Parser Trait 接口并没有规定输入类型是什么，这意味着可以按需实现接受各种各样输入的 Parser。如接受：&lt;code&gt;str&lt;&#x2F;code&gt;, &lt;code&gt;[u8]&lt;&#x2F;code&gt;, ... 的 Parser。&lt;&#x2F;p&gt;
+&lt;p&gt;因为我的目标是一个 JSON Parser，所以我优先实现接受 &lt;code&gt;str&lt;&#x2F;code&gt; 为输入的 basic parsers。代码见: &lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;py0x&#x2F;parcomb&#x2F;blob&#x2F;main&#x2F;src&#x2F;string_parser.rs&quot;&gt;这里&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;所谓的 basic parsers，其实就是方便用户构造 parser 的一些函数，有了这些构造函数，用户就无需从头开始裸写 parser。&lt;&#x2F;p&gt;
+&lt;p&gt;比如 literal parser &lt;code&gt;lit&lt;&#x2F;code&gt;:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#2b303b;color:#c0c5ce;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; par = &lt;&#x2F;span&gt;&lt;span style=&quot;color:#96b5b4;&quot;&gt;lit&lt;&#x2F;span&gt;&lt;span&gt;(&amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#a3be8c;&quot;&gt;hello&lt;&#x2F;span&gt;&lt;span&gt;&amp;quot;); &lt;&#x2F;span&gt;&lt;span style=&quot;color:#65737e;&quot;&gt;&#x2F;&#x2F; 生成一个 parse &amp;quot;hello&amp;quot; 的 parser
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; inp = &amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#a3be8c;&quot;&gt;hello world&lt;&#x2F;span&gt;&lt;span&gt;&amp;quot;;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; res = par.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#96b5b4;&quot;&gt;parse&lt;&#x2F;span&gt;&lt;span&gt;(inp).&lt;&#x2F;span&gt;&lt;span style=&quot;color:#96b5b4;&quot;&gt;unwrap&lt;&#x2F;span&gt;&lt;span&gt;();
+&lt;&#x2F;span&gt;&lt;span&gt;assert_eq!((format!(&amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#a3be8c;&quot;&gt;hello&lt;&#x2F;span&gt;&lt;span&gt;&amp;quot;), &amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#a3be8c;&quot;&gt; world&lt;&#x2F;span&gt;&lt;span&gt;&amp;quot;), res);
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;甚至可以更通用一些，正则表达式 parser &lt;code&gt;reg&lt;&#x2F;code&gt;:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#2b303b;color:#c0c5ce;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; par = &lt;&#x2F;span&gt;&lt;span style=&quot;color:#96b5b4;&quot;&gt;reg&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;r&lt;&#x2F;span&gt;&lt;span&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#a3be8c;&quot;&gt;\d{2}\w+&lt;&#x2F;span&gt;&lt;span&gt;&amp;quot;);  &lt;&#x2F;span&gt;&lt;span style=&quot;color:#65737e;&quot;&gt;&#x2F;&#x2F; 生成一个 parse r&amp;quot;\d{2}\w+&amp;quot; 这个正则表达式的 parser
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; inp = &amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#a3be8c;&quot;&gt;19abcd$$&lt;&#x2F;span&gt;&lt;span&gt;&amp;quot;;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; res = par.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#96b5b4;&quot;&gt;parse&lt;&#x2F;span&gt;&lt;span&gt;(inp).&lt;&#x2F;span&gt;&lt;span style=&quot;color:#96b5b4;&quot;&gt;unwrap&lt;&#x2F;span&gt;&lt;span&gt;();
+&lt;&#x2F;span&gt;&lt;span&gt;assert_eq!((format!(&amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#a3be8c;&quot;&gt;19abcd&lt;&#x2F;span&gt;&lt;span&gt;&amp;quot;), &amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#a3be8c;&quot;&gt;$$&lt;&#x2F;span&gt;&lt;span&gt;&amp;quot;), res);
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;这里有意思的是，我们只要用 Parser Combinator 把这些 reg parsers 组合起来，就得到了一个支持递归的正则表达式引擎。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;json-parser&quot;&gt;JSON Parser&lt;&#x2F;h3&gt;
+&lt;p&gt;对着 JSON 的 &lt;a href=&quot;https:&#x2F;&#x2F;www.json.org&#x2F;json-en.html&quot;&gt;Schema&lt;&#x2F;a&gt;，使用我们预设好的 String Parser 和 Parser Combinator，就可以描述性地定义出一个 JSON Parser。代码参见：&lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;py0x&#x2F;parcomb&#x2F;blob&#x2F;main&#x2F;examples&#x2F;json.rs&quot;&gt;这里&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;这个 JSON Parser 的定义，其实也就 100 行代码左右。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;jie-yu&quot;&gt;结语&lt;&#x2F;h3&gt;
+&lt;p&gt;能够熟练地使用 Traits 和 Generic Data Types 进行程序设计和实现，应该就能够 Thinking in Rust 了。&lt;&#x2F;p&gt;
+&lt;p&gt;能够使用一个语言来思考，无论这个语言是自然语言的英语，抑或是程序语言的 Rust，那么就算掌握这门语言了吧！&lt;&#x2F;p&gt;
+</content>
+	</entry>
 	<entry xml:lang="en">
 		<title>深入理解 Rust - References and Borrowing</title>
 		<published>2022-10-25T00:00:00+00:00</published>

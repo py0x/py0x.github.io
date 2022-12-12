@@ -8,8 +8,6 @@ description = "Writing a JSON parser from scratch"
 
 实现分两层，1. 通用 Parser Combinator 库 parcomb，2. 基于 parcomb 实现的 JSON parser。
 
-主要的复杂度都在 parcomb，基于 parcomb， JSON 实现的部分只需要 100 行代码左右：
-
 - [JSON Parser 实现 (基于 parcomb)](https://github.com/py0x/parcomb/blob/main/examples/json.rs)
 - [parcomb 完整代码](https://github.com/py0x/parcomb)
 
@@ -86,7 +84,7 @@ where
 
 中间接口层一定，剩下的事情就好办了：
 1. 往上走，**使用这个接口**, 实现高层逻辑，即：基于这个 Parser 接口去实现各种 Parser Combinators；
-2. 往下走，**实现这个接口**, 提供底层逻辑，即：为各种各样的具体的 Parser 类型去实现这个 Parser 接口。
+2. 往下走，**实现这个接口**, 提供底层逻辑，即：为各种各样的具体的类型去实现这个 Parser 接口。
 
 也就是[依赖反转原则 Dependency inversion principle](https://en.wikipedia.org/wiki/Dependency_inversion_principle) 的应用。
 
@@ -111,7 +109,7 @@ where
 
 `parcomb` 的这些胶水操作，每个操作我都选择了用一个特定的类型 `Struct` 去表示和实现，然后为每个 `Struct`  都实现 Parser 这个 Trait，这样所有操作就满足了[闭包性质](https://en.wikipedia.org/wiki/Closure_(mathematics))，可以自由组合了。
 
-代码参见: [https://github.com/py0x/parcomb/blob/main/src/parser.rs](https://github.com/py0x/parcomb/blob/main/src/parser.rs)
+代码见: [这里](https://github.com/py0x/parcomb/blob/main/src/parser.rs)
 
 这个实现过程其实有不少有意思地方。比如：
 
@@ -125,5 +123,47 @@ where
 
 
 ### 向下实现：String Parser
+
+我们的 Parser Trait 接口并没有规定输入类型是什么，这意味着可以按需实现接受各种各样输入的 Parser。如接受：`str`, `[u8]`, ... 的 Parser。
+
+因为我的目标是一个 JSON Parser，所以我优先实现接受 `str` 为输入的 basic parsers。代码见: [这里](https://github.com/py0x/parcomb/blob/main/src/string_parser.rs)
+
+所谓的 basic parsers，其实就是方便用户构造 parser 的一些函数，有了这些构造函数，用户就无需从头开始裸写 parser。
+
+比如 literal parser `lit`:
+
+``` rust
+let par = lit("hello"); // 生成一个 parse "hello" 的 parser
+let inp = "hello world";
+let res = par.parse(inp).unwrap();
+assert_eq!((format!("hello"), " world"), res);
+```
+
+甚至可以更通用一些，正则表达式 parser `reg`:
+
+``` rust
+
+let par = reg(r"\d{2}\w+");  // 生成一个 parse r"\d{2}\w+" 这个正则表达式的 parser
+let inp = "19abcd$$";
+let res = par.parse(inp).unwrap();
+assert_eq!((format!("19abcd"), "$$"), res);
+```
+
+这里有意思的是，我们只要用 Parser Combinator 把这些 reg parsers 组合起来，就得到了一个支持递归的正则表达式引擎。
+
+
+### JSON Parser
+
+对着 JSON 的 [Schema](https://www.json.org/json-en.html)，使用我们预设好的 String Parser 和 Parser Combinator，就可以描述性地定义出一个 JSON Parser。代码参见：[这里](https://github.com/py0x/parcomb/blob/main/examples/json.rs)
+
+这个 JSON Parser 的定义，其实也就 100 行代码左右。
+
+
+### 结语
+
+能够熟练地使用 Traits 和 Generic Data Types 进行程序设计和实现，应该就能够 Thinking in Rust 了。
+
+能够使用一个语言来思考，无论这个语言是自然语言的英语，抑或是程序语言的 Rust，那么就算掌握这门语言了吧！
+
 
 
