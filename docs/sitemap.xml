@@ -19,4 +19,8 @@
         <loc>http://pypy.info/rust-parser-combinator/</loc>
         <lastmod>2022-10-30</lastmod>
     </url>
+    <url>
+        <loc>http://pypy.info/rust-shared-mutability/</loc>
+        <lastmod>2022-11-01</lastmod>
+    </url>
 </urlset>

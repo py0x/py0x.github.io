@@ -2,7 +2,7 @@
 base_url = "http://pypy.info"
 
 title = "Me as a method"
-description = "直觉和逻辑的纠缠"
+description = "用直觉与逻辑寻求好解释，用好解释丰富直觉与逻辑"
 
 compile_sass = true
 generate_feed = true
