@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
 	<title>Me as a method</title>
-	<subtitle>我的想法不是我的，我察觉到了我的想法。</subtitle>
+	<subtitle>直觉和逻辑的纠缠</subtitle>
 	<link href="http://pypy.info/atom.xml" rel="self" type="application/atom+xml"/>
   <link href="http://pypy.info"/>
 	<generator uri="https://www.getzola.org/">Zola</generator>
@@ -130,17 +130,17 @@
 		<link rel="alternate" href="http://pypy.info/rust-borrow/" type="text/html"/>
 		<id>http://pypy.info/rust-borrow/</id>
 		<content type="html">&lt;p&gt;指针是万恶之源。&lt;&#x2F;p&gt;
-&lt;p&gt;你不拥有这块数据，你只是有一个指向这块数据的地址（数据引用）。如果数据被删了，被改了，你根本就不知道。换言之，你所依赖的这块数据并不安全。因为你担心别的代码对它动手脚。很多 bug 就是这么出现的，data race, dangling pointer，等等等等。&lt;&#x2F;p&gt;
+&lt;p&gt;你不拥有这块数据，你只是有一个指向这块数据的地址（数据引用）。如果数据被删了，被改了，你根本就不知道。换言之，你所依赖的这块数据并不安全。因为你担心别的代码对它动手脚。很多 bug 就是这么出现的，data race, dangling pointer，诸如此类。&lt;&#x2F;p&gt;
 &lt;p&gt;细想一下，数据的安全性主要由两个因素控制：&lt;&#x2F;p&gt;
 &lt;ol&gt;
-&lt;li&gt;共享性：数据是否共享，是否存在多个引用？&lt;&#x2F;li&gt;
-&lt;li&gt;可变性：数据是否允许被修改？&lt;&#x2F;li&gt;
+&lt;li&gt;共享性: 数据是否共享，是否存在多个引用？&lt;&#x2F;li&gt;
+&lt;li&gt;可变性: 数据是否允许被修改？&lt;&#x2F;li&gt;
 &lt;&#x2F;ol&gt;
 &lt;p&gt;换言之，一块数据之所以会不安全，是因为它同时满足了共享性和可变性。有这块数据引用的可能不止一个地方，而且都能修改这块数据，我们就开始担心别的引用会修改这块数据，破坏我的这块代码的假设。&lt;&#x2F;p&gt;
 &lt;p&gt;于是，要想得到数据安全，只需要：&lt;&#x2F;p&gt;
 &lt;ol&gt;
 &lt;li&gt;禁止数据共享: 不允许共享数据 (unsharable)&lt;&#x2F;li&gt;
-&lt;li&gt;禁止数据可变：不允许修改数据 (immutable)&lt;&#x2F;li&gt;
+&lt;li&gt;禁止数据可变: 不允许修改数据 (immutable)&lt;&#x2F;li&gt;
 &lt;&#x2F;ol&gt;
 &lt;p&gt;禁止数据共享。这个好理解，如果这块数据是你独享的，只有你一个引用，那么别的代码不可能对它动手脚，数据是安全的。&lt;&#x2F;p&gt;
 &lt;p&gt;禁止数据可变。是函数式的思路，比如 Haskell，不允许有副作用，要想改就基于旧的创建一个新的，数据手递手传递。这样你依赖一个数据，就可以放心地假设它不会被别人悄悄地修改。比如依赖一个字典，可以肯定这个字典的 key-values 不会被悄悄地改掉。&lt;&#x2F;p&gt;
@@ -153,10 +153,12 @@
 &lt;p&gt;但凡事总有例外。&lt;&#x2F;p&gt;
 &lt;p&gt;有些场景下，这个规则是必须得破坏掉的，否则便实现不了所需要的功能。&lt;&#x2F;p&gt;
 &lt;p&gt;比如要实现一个共享 &lt;code&gt;cache&lt;&#x2F;code&gt;，程序的多个地方通过引用指向同一个 &lt;code&gt;cache&lt;&#x2F;code&gt; 对象来使用这个 &lt;code&gt;cache&lt;&#x2F;code&gt;。也就是说，共享 &lt;code&gt;cache&lt;&#x2F;code&gt; 的引用可能有多个（否则就称不上共享了）。&lt;&#x2F;p&gt;
-&lt;p&gt;而对一个 &lt;code&gt;cache&lt;&#x2F;code&gt; 的主要使用方式，其实就是读和写。先读一下，如果发现 cache miss，那么就去获取这个 miss 的数据，然后写回 cache。也就是说，&lt;code&gt;cache&lt;&#x2F;code&gt; 的引用必须支持修改数据（缓存需要：存）。&lt;&#x2F;p&gt;
+&lt;p&gt;而对一个 &lt;code&gt;cache&lt;&#x2F;code&gt; 的主要使用方式，其实就是读和写。先读一下，如果发现 cache miss，那么就去获取这个 miss 的数据，然后写回 cache。也就是说，&lt;code&gt;cache&lt;&#x2F;code&gt; 的引用必须支持修改数据。&lt;&#x2F;p&gt;
 &lt;p&gt;在共享 &lt;code&gt;cache&lt;&#x2F;code&gt; 这个场景下，我们既要能共享数据，又要能修改数据。既要共享性，也要可变性。上文提到的规则不适用了。&lt;&#x2F;p&gt;
 &lt;p&gt;Rust 提供了另一个机制来处理这种场景。官方说法叫&lt;a href=&quot;https:&#x2F;&#x2F;doc.rust-lang.org&#x2F;book&#x2F;ch15-05-interior-mutability.html&quot;&gt;内部可变性(interior-mutability)&lt;&#x2F;a&gt;。其实它的真正意思是：共享可变性(shared-mutability)。&lt;&#x2F;p&gt;
 &lt;p&gt;共享可变性在运行期，而不是编译期来保证数据安全。核心做法是使用 &lt;a href=&quot;https:&#x2F;&#x2F;doc.rust-lang.org&#x2F;reference&#x2F;interior-mutability.html&quot;&gt;&lt;code&gt;Cell&lt;&#x2F;code&gt; 类型&lt;&#x2F;a&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;(注：&lt;code&gt;interior-mutability&lt;&#x2F;code&gt; 是一个极其常见且重要的 pattern，阅读 Rust 开源代码时经常可以看到把可变的状态封装到一个 &lt;code&gt;inner&lt;&#x2F;code&gt; 数据结构的场景，
+而外层数据结构则提供基于 &lt;code&gt;&amp;amp;self&lt;&#x2F;code&gt; 而不是 &lt;code&gt;&amp;amp;mut self&lt;&#x2F;code&gt; 的 methods。这样就保证了用户使用这个数据结构时不是互斥的，增加了可用性。)&lt;&#x2F;p&gt;
 &lt;p&gt;总结一下：&lt;&#x2F;p&gt;
 &lt;ol&gt;
 &lt;li&gt;Rust 引用有两种：共享性引用(&lt;code&gt;&amp;amp;&lt;&#x2F;code&gt;)和可变性引用(&lt;code&gt;&amp;amp;mut&lt;&#x2F;code&gt;)&lt;&#x2F;li&gt;
