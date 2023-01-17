@@ -5,8 +5,116 @@
 	<link href="http://pypy.info/atom.xml" rel="self" type="application/atom+xml"/>
   <link href="http://pypy.info"/>
 	<generator uri="https://www.getzola.org/">Zola</generator>
-	<updated>2022-11-01T00:00:00+00:00</updated>
+	<updated>2022-11-05T00:00:00+00:00</updated>
 	<id>http://pypy.info/atom.xml</id>
+	<entry xml:lang="en">
+		<title>深入理解 Rust - 异步编程内幕</title>
+		<published>2022-11-05T00:00:00+00:00</published>
+		<updated>2022-11-05T00:00:00+00:00</updated>
+		<link rel="alternate" href="http://pypy.info/rust-async/" type="text/html"/>
+		<id>http://pypy.info/rust-async/</id>
+		<content type="html">&lt;h2 id=&quot;han-shu&quot;&gt;函数&lt;&#x2F;h2&gt;
+&lt;p&gt;让我们从函数说起。&lt;&#x2F;p&gt;
+&lt;p&gt;一个普通函数，我们调用它的时候，它会执行完成并返回最终结果。&lt;&#x2F;p&gt;
+&lt;p&gt;一个异步函数，我们调用它的时候，或许它会执行完成返回最终结果: &lt;code&gt;Ready(result)&lt;&#x2F;code&gt;，又或许它没能执行完成，返回一个需要等待的&amp;quot;标志&amp;quot;: &lt;code&gt;Pending&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;为了使得异步函数执行完成，我们需要（隔一段时间就）反复调用它，直到拿到最终结果。&lt;&#x2F;p&gt;
+&lt;p&gt;问题是，为什么会出现这种函数？&lt;&#x2F;p&gt;
+&lt;p&gt;答案是: Non-Blocking I&#x2F;O&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;non-blocking-i-o&quot;&gt;Non-Blocking I&#x2F;O&lt;&#x2F;h2&gt;
+&lt;p&gt;程序调用链的尽头是系统调用。&lt;&#x2F;p&gt;
+&lt;p&gt;系统调用默认是阻塞 (Blocking) 的，也就是程序卡在那里等内核返回。&lt;&#x2F;p&gt;
+&lt;p&gt;正常情况下阻塞调用不会有太大问题，但对网络 I&#x2F;O 操作而言，因为涉及到和外部系统交互且传输时延大，这种阻塞调用会导致 CPU 闲置。&lt;&#x2F;p&gt;
+&lt;p&gt;于是可以采用非阻塞 (Non-Blocking) 的方式，这时候 I&#x2F;O 操作可能拿到结果，也可能返回错误（未 ready），但不会卡住。&lt;&#x2F;p&gt;
+&lt;p&gt;如果 I&#x2F;O 操作返回了&amp;quot;未 Ready&amp;quot;。那么程序可以继续去干一些别的计算，过一段时间再来尝试 I&#x2F;O 操作。&lt;&#x2F;p&gt;
+&lt;p&gt;这个 Non-Blocking I&#x2F;O 的调用，就是异步函数的原型。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;yi-bu-han-shu-future&quot;&gt;异步函数 Future&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;jie-kou-interface&quot;&gt;接口 (interface)&lt;&#x2F;h3&gt;
+&lt;p&gt;一个最底层的函数往往是因为要进行 Non-blocking IO 而被 &amp;quot;传染&amp;quot; 成异步函数。 它的函数接口可以写成如下的样子：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;Rust&quot; style=&quot;background-color:#2b303b;color:#c0c5ce;&quot; class=&quot;language-Rust &quot;&gt;&lt;code class=&quot;language-Rust&quot; data-lang=&quot;Rust&quot;&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;color:#8fa1b3;&quot;&gt;poll&lt;&#x2F;span&gt;&lt;span&gt;(...) -&amp;gt; Poll;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#b48ead;&quot;&gt;enum &lt;&#x2F;span&gt;&lt;span&gt;Poll&amp;lt;T&amp;gt; {
+&lt;&#x2F;span&gt;&lt;span&gt;    Ready(T),
+&lt;&#x2F;span&gt;&lt;span&gt;    Pending,
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;把它命名为 poll, 是因为这个函数可以被反复调用（轮训），直到 &lt;code&gt;Poll::Ready&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;Rust 的语境下，异步函数被命名为 &lt;code&gt;Future&lt;&#x2F;code&gt;: 这个 poll 函数被设计成一个 &lt;code&gt;Future&lt;&#x2F;code&gt; Trait。&lt;a href=&quot;https:&#x2F;&#x2F;docs.rs&#x2F;futures&#x2F;latest&#x2F;futures&#x2F;future&#x2F;trait.Future.html&quot;&gt;文档参考&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;zu-he-composition&quot;&gt;组合 (composition)&lt;&#x2F;h3&gt;
+&lt;p&gt;如上文所说，一个最底层函数因为 Non-blocking I&#x2F;O 而被 &amp;quot;传染&amp;quot; 成使用异步接口。&lt;&#x2F;p&gt;
+&lt;p&gt;这种传染还会继续发生，调用异步函数的函数，只能是异步函数。因为向下调用的异步函数可能会返回 Pending，这时候只能向上返回 Pending。&lt;&#x2F;p&gt;
+&lt;p&gt;我们考虑一个普通函数组合 (字母代表不同的函数调用，函数 A 的结果是由函数 B 和 函数 C 的结果相加而得)：&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#2b303b;color:#c0c5ce;&quot;&gt;&lt;code&gt;&lt;span&gt;A = B + C
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;如果 B 和 C 双方或者任意一方是异步函数，那么只能改成：&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#2b303b;color:#c0c5ce;&quot;&gt;&lt;code&gt;&lt;span&gt;A.poll = B.poll + C.poll  &#x2F;&#x2F; B 和 C 都是异步函数
+&lt;&#x2F;span&gt;&lt;span&gt;或
+&lt;&#x2F;span&gt;&lt;span&gt;A.poll = B.poll + C  &#x2F;&#x2F; 只有 B 是异步函数
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;如果我们把这里的 &lt;code&gt;.poll&lt;&#x2F;code&gt; 换一个更恰当的名字: &lt;code&gt;.await&lt;&#x2F;code&gt;，则有：&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#2b303b;color:#c0c5ce;&quot;&gt;&lt;code&gt;&lt;span&gt;A.await = B.await + C.await
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;为了区别普通函数和异步函数，我们给异步函数在定义时使用 &lt;code&gt;async&lt;&#x2F;code&gt; 关键字，调用时使用 &lt;code&gt;await&lt;&#x2F;code&gt; 关键字，则有:&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#2b303b;color:#c0c5ce;&quot;&gt;&lt;code&gt;&lt;span&gt;async A = B.await + C.await
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;这就是 &lt;code&gt;async&#x2F;await&lt;&#x2F;code&gt; 的原型了。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;zong-jie&quot;&gt;总结&lt;&#x2F;h3&gt;
+&lt;ol&gt;
+&lt;li&gt;Future Trait: 最底层通过实现一个 poll 方法，提供基本的 future (叶子 Future)；&lt;&#x2F;li&gt;
+&lt;li&gt;Async&#x2F;Await: 上层通过层层组合 future，产生新的 future。&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h2 id=&quot;async-runtime&quot;&gt;Async Runtime&lt;&#x2F;h2&gt;
+&lt;p&gt;上文提到 &lt;code&gt;Future.await&lt;&#x2F;code&gt; 会返回 &lt;code&gt;Pending&lt;&#x2F;code&gt;。返回 &lt;code&gt;Pending&lt;&#x2F;code&gt; 是为了不卡住。而不卡住是为了可以执行别的 Future，最大化利用 CPU。&lt;&#x2F;p&gt;
+&lt;p&gt;也就是说这里出现了一个 Future 调度执行的需求，一旦某个 &lt;code&gt;Future.await&lt;&#x2F;code&gt; 返回了 &lt;code&gt;Pending&lt;&#x2F;code&gt;, 那么就把它挂起，改为执行别的 Future，等合适的时候，再回头执行之前挂起的 Future。&lt;&#x2F;p&gt;
+&lt;p&gt;我们管这个调度执行 Futures 的组件叫 &lt;code&gt;Async Runtime&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;Async Runtime&lt;&#x2F;code&gt; 反复切换 Future，反复执行 Future, 直到 Future 拿到最终结果。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;runtime-she-ji-si-lu&quot;&gt;Runtime 设计思路&lt;&#x2F;h3&gt;
+&lt;p&gt;Async Runtime 的主要功能是调度执行 Futures。于是调度策略变得非常重要。&lt;&#x2F;p&gt;
+&lt;p&gt;调度策略主要要解决如下问题：&lt;&#x2F;p&gt;
+&lt;p&gt;上文提到，Future 在执行的时候会返回 Pending 而被挂起。那么，这些挂起的 Futures 什么时候应该被再次执行？&lt;&#x2F;p&gt;
+&lt;p&gt;如果简单地轮训盲试，有效性可能会很差，白白浪费 CPU 资源。&lt;&#x2F;p&gt;
+&lt;p&gt;最好的方式，当然是想办法告诉 Runtime 某个 Future ready 了，应该被再次 poll。&lt;&#x2F;p&gt;
+&lt;p&gt;这个办法是有的，为了区别起见，我们把 Async Runtime 分成两个部分：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;Executor: 负责调度执行 Futures&lt;&#x2F;li&gt;
+&lt;li&gt;Reactor: 负责通知 Executor 某个 Future ready 了&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h3 id=&quot;reactor&quot;&gt;Reactor&lt;&#x2F;h3&gt;
+&lt;p&gt;Reactor 的责任是通知 Executor 某个 Future ready 了，那么 Reactor 怎么知道 Future ready 的？&lt;&#x2F;p&gt;
+&lt;p&gt;答案是：操作系统告诉它的。&lt;&#x2F;p&gt;
+&lt;p&gt;不严谨地说，Reactor 的原型是 &lt;a href=&quot;https:&#x2F;&#x2F;notes.shichao.io&#x2F;unp&#x2F;ch6&#x2F;#chapter-6-io-multiplexing-the-select-and-poll-functions&quot;&gt;I&#x2F;O Multiplexing&lt;&#x2F;a&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;所谓 I&#x2F;O Multiplexing 就是用一个专用的线程，去阻塞等待多个 I&#x2F;O sources (比如 socket)。&lt;&#x2F;p&gt;
+&lt;p&gt;当有 I&#x2F;O sources 可以进行 I&#x2F;O 操作时，通知和这个 I&#x2F;O source 有关的 handler 进行 I&#x2F;O 操作 (Demultiplexing)。&lt;&#x2F;p&gt;
+&lt;p&gt;不同的操作系统提供了不同的系统调用来做这件事，现在一般使用的是 epoll&#x2F;kqueue&#x2F;IOCP。 （可参考 &lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;tokio-rs&#x2F;mio&quot;&gt;Mio&lt;&#x2F;a&gt; 的实现）&lt;&#x2F;p&gt;
+&lt;p&gt;上文提到，Future 的最底层操作往往是 Non-blocking I&#x2F;O，I&#x2F;O 操作意味着有一个 I&#x2F;O source (比如 socket)，
+这个 I&#x2F;O source 可以通过 I&#x2F;O Multiplexing 让另一个线程去监听，当它 ready 时，就可以通知 Executor 唤醒和它有关联的 Futures。&lt;&#x2F;p&gt;
+&lt;p&gt;换言之，程序的尽头是一堆 I&#x2F;O sources，每个 I&#x2F;O source 其实是和一组 Futures 所关联的。我们通过 Multiplexing 的方式监听 I&#x2F;O sources 的状态，就可以准确地唤醒和它关联的 Futures。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;runtime-jia-gou&quot;&gt;Runtime 架构&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;img src=&quot;http:&#x2F;&#x2F;pypy.info&#x2F;rust-async&#x2F;.&#x2F;rust-async.png&quot; alt=&quot;future-runtime&quot; &#x2F;&gt;&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Executor 调用 future.poll, 并传入一个 callback（注：这个 callback 也叫 Waker，是通过 Future 层层传递最终注册到 Reactor 让它唤醒 Future 的）&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;ol&gt;
+&lt;li&gt;Future(最底层的叶子 Future) 使用 non-blocking 模式对 I&#x2F;O source 操作，直到它返回 err 表示无法继续。&lt;&#x2F;li&gt;
+&lt;li&gt;把这个 I&#x2F;O source 和 callback 注册到 Reactor 进行监听 (以便知道什么时候可以继续)。&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;Reactor 通过操作系统集中监听多个 I&#x2F;O sources。&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;I&#x2F;O 事件到达 I&#x2F;O source&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;Reactor 调用 callback(Waker) 唤醒对应 Future。&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h2 id=&quot;jie-yu&quot;&gt;结语&lt;&#x2F;h2&gt;
+&lt;p&gt;Rust 异步是基于 &lt;a href=&quot;https:&#x2F;&#x2F;doc.rust-lang.org&#x2F;std&#x2F;future&#x2F;trait.Future.html&quot;&gt;Future Trait&lt;&#x2F;a&gt; 标准的生态系统。具体实现是多元化的，比如有不同的异步运行时实现。&lt;&#x2F;p&gt;
+&lt;p&gt;这里希望提供一些基础性和启发性的理解角度，具体的细节请参考其他文档。&lt;&#x2F;p&gt;
+</content>
+	</entry>
 	<entry xml:lang="en">
 		<title>深入理解 Rust - 共享可变性</title>
 		<published>2022-11-01T00:00:00+00:00</published>
