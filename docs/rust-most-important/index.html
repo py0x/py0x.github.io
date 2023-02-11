@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+  
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>深入 Rust - Rust 中最重要的事 &middot; Me as a method</title>
+    <meta name="description" content="The most important thing in Rust" />
+    <link rel="shortcut icon"  href="http://pypy.info/favicon.ico" />
+    <link rel="alternate" type="application/atom+xml" title="RSS" href="http://pypy.info/atom.xml">
+
+    <style>html,body{background:#fffaf7;color:#2d2d2d;font:16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"}a,a:visited{color:darkred;text-decoration:none}a:hover{text-decoration:underline}main{margin:auto;max-width:38rem;padding:0.8rem}pre{background:white;overflow:scroll;padding:1rem}td{border:1px solid #2d2d2d;padding:10px}img{height:auto;max-width:100%}.homepage-list{list-style:none;padding:1rem 0}.homepage-list li{align-items:center;display:flex;flex-wrap:wrap;justify-content:space-between;margin-bottom:10px}@media (max-width: 38rem){.homepage-list li a{width:100%}}
+</style>
+
+    <meta property="og:site_name" content="Me as a method">
+      
+      <meta property="og:title" content="深入 Rust - Rust 中最重要的事">
+      <meta property="og:description" content="The most important thing in Rust">
+      <meta property="og:url" content="http://pypy.info/rust-most-important/">
+      <meta property="og:image" content="">
+
+      <meta property="og:type" content="article" />
+        <meta property="article:published_time" content="2023-01-07T00:00:00+00:00" />
+
+      
+      
+    
+
+  </head>
+  
+
+  <body>
+    <main id="main" role="main">
+
+      
+      <header role="banner">
+        <h3 style="margin-top:0;">
+          <a href="http://pypy.info" title="Home">Me as a method</a>
+          <br /><small>用直觉与逻辑寻求好解释，用好解释丰富直觉与逻辑</small>
+        </h3>
+      </header>
+      <hr />
+      
+
+      
+<article>
+  <h1>深入 Rust - Rust 中最重要的事</h1>
+
+  
+    <p style="font-size:90%;">Posted on <time datetime="2023-01-07T00:00:00+00:00">January 07, 2023</time></p>
+  
+
+  <h3 id="qian-yan">前言</h3>
+<p>编程时，我们实际上需要同时关注 &quot;内存&quot; 和 &quot;数据&quot; 两个概念。</p>
+<p>大部分高级语言因为有 &quot;垃圾回收&quot;，所以可以不关注 &quot;内存&quot;，只关心 &quot;数据&quot;。</p>
+<p>Rust 没有 &quot;垃圾回收&quot; ，但是它又不希望用户<strong>显式</strong>地去管理内存，它把内存的生命周期和数据的生命周期紧密地结合在一起 (参考: <a href="https://tourofrust.com/44_en.html">RAII</a>)。</p>
+<p>于是，在编写 Rust 代码的时候，我们看似在操作 &quot;数据&quot;，事实上我们在同时操作 &quot;内存&quot; 和 &quot;数据&quot;。</p>
+<p>于是，变量(variable)， 不再是其它语言里的变量。</p>
+<p>于是，赋值(<code>a = b</code>)，也不再是其它语言里的赋值。</p>
+<p>每一句 Rust 代码(expression/statement)，都有着更加丰富的语义。</p>
+<p>我们带着别的高级语言的经验和直觉，来编写 Rust 代码的时候，就等同于和编译器搏斗。</p>
+<p><a href="https://doc.rust-lang.org/book/">The Rust Programming Language</a> 为了方便大家入门，使用了一些如 owner/borrowing 的隐喻性概念。</p>
+<p>但我们最终还是得抛弃掉这些隐喻，去如实地，结合每一个 expression/statement 去理解，Rust 编译器的工作原理是什么。
+(所有的秘密都藏在 <a href="https://doc.rust-lang.org/reference/introduction.html">The Rust Reference</a> 里)</p>
+<p>下面，我要开始讲述最基础，最重要，又最容易被大家忽略的部分。</p>
+<h3 id="nei-cun-he-shu-ju-biao-shi-place-value">内存和数据表示: Place &amp; Value</h3>
+<p>Rust 中最重要的两个概念，分别是 <strong>Place</strong> 和 <strong>Value</strong>，分别和上文提到的 &quot;内存&quot; 和 &quot;数据&quot; 相关。</p>
+<ul>
+<li><strong>Place</strong> : 表示内存 <strong>位置</strong> (memory location)。</li>
+<li><strong>Value</strong> : 表示 Place (内存位置) 里的 <strong>值</strong> 。</li>
+</ul>
+<p>其中， <strong>Value</strong> 是很简单的，代表实际的值。如:</p>
+<p><code>1, true, &quot;aaa&quot;, String::new(&quot;hi&quot;), Struct{...}, ...</code></p>
+<p><strong>Place</strong> 是重点中的重点，却又往往被大家忽略。</p>
+<p>我们先来问一个问题:</p>
+<blockquote>
+<p>一个变量 (variable), 表达的是一个 Place, 还是一个 Value？</p>
+</blockquote>
+<p>考察下面这两行代码:</p>
+<pre data-lang="rust" style="background-color:#2b303b;color:#c0c5ce;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="color:#b48ead;">let</span><span> a = </span><span style="color:#d08770;">1</span><span>;
+</span><span style="color:#b48ead;">let</span><span> b = a;
+</span></code></pre>
+<p>注意变量 <code>a</code>，</p>
+<ul>
+<li>当它出现在等号左边的时候，它表示一个 <strong>Place</strong>，可以存入 1 这个 Value；</li>
+<li>当它出现在等号右边的时候，它表示这个 <strong>Place 里的 Value</strong>。</li>
+</ul>
+<p>也就是说，一个变量，表示的是一个 Place (place expression)。</p>
+<p>但它的<strong>具体表达要结合它的上下文 (context) 来进行</strong>。
+在等号左边 (place context)，它就表达为一个 Place；在等号右边 (value context)，它则表达为 Place 里的 Value。</p>
+<p>官方说法：</p>
+<blockquote>
+<p>Expressions are divided into two main categories: place expressions and value expressions;
+Within each expression, operands may likewise occur in either place context or value context.
+The evaluation of an expression depends both on its own category and the context it occurs within.</p>
+</blockquote>
+<p>具体细节请参考: <a href="https://doc.rust-lang.org/reference/expressions.html#place-expressions-and-value-expressions">这里</a></p>
+<h3 id="place-de-yin-yong-reference">Place 的引用: Reference</h3>
+<p>Place 的使用一般有两种方式：直接表示 和 间接引用。</p>
+<p>直接表示，即硬编码，比如变量 (<code>a</code>)，字段 (<code>expr.f</code>), 数组索引 (<code>expr[i]</code>) 和解引用 (<code>*expr</code>)，它们都是 Place。</p>
+<p>间接引用，即 Reference，</p>
+<ul>
+<li>
+<p>通过 ref(<code>&amp;</code>) 获取一个 Place 的 Reference，作为 Value 使用:</p>
+<ul>
+<li><code>&amp;place -&gt; reference</code></li>
+</ul>
+</li>
+<li>
+<p>通过 deref(<code>*</code>) 解引用一个 Reference，得到一个 Place:</p>
+<ul>
+<li><code>*reference -&gt; place</code></li>
+</ul>
+</li>
+</ul>
+<p>(特别注意：受其它语言影响，(<code>*</code>)操作经常被误解，它并<strong>不表示取出</strong> Place 里的值，它表示的是 Place 本身 (Reference 所指向的 Place)，和其它的 Place (如变量）完全等价。
+这个 Place 到底表达为 Place, 还是 Place 里的值，则取决于 Context。但是无论如何，它都不表示<strong>取出</strong>。
+如果报了 move 有关的错误，那一定是因为用了表达移动/取出的操作 (<code>= *p</code>) 或者 (<code>return *p</code>) 等。
+(<code>*p</code>) 本身不会报错，因为可以这样 (<code>= &amp;*p</code>)： 先(<code>*</code>)定位 Place，再(<code>&amp;</code>)变成 Reference，再移动(<code>=</code>) Reference，而不报错。</p>
+<h3 id="place-de-dong-tai-yin-yong-smart-pointer">Place 的动态引用: Smart Pointer</h3>
+<p>Place 的引用分两种，静态引用 Reference 和 动态引用 Smart Pointer。</p>
+<p>所谓动态引用，意思是：</p>
+<p>真实的 Place 可能不是固定的，可能一直在变，因此它的 Reference 也一直在变。为了使用这个动态的 Place，我们需要一个静态的 Place 作为入口代理。
+Rust 提供一种机制，<a href="https://web.mit.edu/rust-lang_v1.25/arch/amd64_ubuntu1404/share/doc/rust/html/book/first-edition/deref-coercions.html">暗中</a>
+给我们的两个 Place 进行 <a href="https://doc.rust-lang.org/std/ops/trait.Deref.html">动态映射</a>。于是我们使用这个代理 Place 的时候，就像使用真正的 Place 一样。</p>
+<p>由于存在一层代理封装，我们便可以封装额外的功能，因此变得 Smart 了起来。因为动态，所以 Smart。</p>
+<p>但我们为什么需要动态的内存(Place)映射？</p>
+<p>因为我们需要封装动态的内存管理。如 <code>String</code>, <code>Vec&lt;T&gt;</code> 可以随着数据增多动态扩展内存。尽管在它们的内部，内存(Place)是变化的，但在外部我们感知不到，因为代理入口是不变的。</p>
+<p>要实现一个 Smart Pointer, 需要实现两个 Traits: <a href="https://doc.rust-lang.org/std/ops/trait.Deref.html">Deref</a> 和 <a href="https://doc.rust-lang.org/std/ops/trait.Drop.html">Drop</a>。</p>
+<ul>
+<li>
+<p>Deref 用来实现动态内存映射: <code>fn(&amp;p) -&gt; &amp;p_x</code>。</p>
+</li>
+<li>
+<p>(注：Place 的动态映射只能通过其 Reference 映射来表示: &amp;a -&gt; &amp;b, 因为 Place 在函数签名里(value context)会表达为 Place 里的值）</p>
+</li>
+<li>
+<p>Drop 用来销毁内部动态申请的内存</p>
+</li>
+</ul>
+<p>著名的 Smart Pointer 如: <code>Box&lt;T&gt;</code>, <code>Rc&lt;T&gt;</code> 其实是做了 Stack Place 到 Heap Place 的动态映射。在 Stack Place 退出作用域时，通过 Drop 销毁 Heap Place。</p>
+<h3 id="value-zai-place-zhi-jian-de-liu-dong-yi-dong-move-fu-zhi-copy-clone-yin-yong-reference">Value 在 Place 之间的流动: 移动(Move), 复制(Copy, Clone), 引用(Reference)</h3>
+<p>这里要重点说一下 Rust 的赋值 (<code>=</code>) 符号。和其它语言建立起来的直觉不同，它不是数学意义上的等于。<strong>它意味着 Value 在 Place 之间流动</strong>。</p>
+<p>广义地，有 4 种基本流动方式 (以 <code>let a = b</code> 为例):</p>
+<ol>
+<li>
+<p><a href="https://doc.rust-lang.org/std/marker/trait.Copy.html">Copy</a>:
+复制 b 的 Value 到 a。复制的方式是 bitwise copy，只对一些基本的简单类型生效。Copy 之后 <code>a</code> 和 <code>b</code> 里都有一份数据。无需显式调用。</p>
+</li>
+<li>
+<p><a href="https://doc.rust-lang.org/std/clone/index.html">Clone</a>:
+复制 b 的 Value 到 a。复制的方式是定制化的复制。需要 b 的类型实现 Clone trait，通过 <code>let a = b.clone()</code> 来使用。<code>.clone()</code> 之后 <code>a</code> 和 <code>b</code> 里都有一份数据。</p>
+</li>
+<li>
+<p><a href="https://doc.rust-lang.org/rust-by-example/scope/move.html">Move</a>:
+移动 b 的 Value 到 a。移动之后 b 没有数据，不能再使用。</p>
+</li>
+<li>
+<p><a href="https://doc.rust-lang.org/std/primitive.reference.html">Reference</a>:
+<code>let a = &amp;b</code>。有些时候不能 Copy，不能/不需要 Clone，也没办法 Move，这时候往往可以取引用。（比如遍历一个链表，<code>node = &amp;node.next</code>)</p>
+</li>
+</ol>
+<p>除了赋值 (<code>let a = b</code>), <strong>Value 在 Place 之间流动</strong> 还会发生在函数调用 (<code>foo(x)</code>) ，返回 (<code>return x</code>), 创建 struct (<code>Struct{a: b}</code>) 等场景。</p>
+<p>我们要考虑这 4 种基本流动方式。</p>
+<h3 id="place-de-fang-wen-yu-an-quan">Place 的访问与安全</h3>
+<p>基本原则就是<strong>读写锁访问原则</strong>。</p>
+<blockquote>
+<p>Place 的共享性与可变性互斥。共享不可变，可变不共享。</p>
+</blockquote>
+<p>另外值得注意的是，这个原则是需要递归成立的。</p>
+<p>比如 a 是共享的 (&amp;)，a 里边的 b 是可变的 (&amp;mut)，通过 a 入口去访问 b (<code>a.b</code>)，那么 <code>a.b</code> 实际上是共享的，所以不可变。
+但如果 a 是独享的(owner本身或者 &amp;mut), 那么 <code>a.b</code> 则可变。</p>
+<p>更多参考：</p>
+<ol>
+<li><a href="/rust-borrow">深入 Rust - References and Borrowing</a></li>
+<li><a href="/rust-shared-mutability">深入 Rust - 共享可变性</a></li>
+</ol>
+<h3 id="place-de-sheng-ming-zhou-qi">Place 的生命周期</h3>
+<ol>
+<li>Place 退出作用域时，会（递归地）调用 <a href="https://doc.rust-lang.org/std/ops/trait.Drop.html">Drop</a> 释放所有关联资源。</li>
+<li>Place 的引用 (Reference) 的生命周期不能大于 Place 的生命周期。</li>
+</ol>
+
+</article>
+
+
+      
+      <footer role="contentinfo">
+        <hr />
+        
+        
+        <small>
+          Maintained with &hearts; for the web.<br />
+          Email: py@pypy.info
+        </small>
+        
+      </footer>
+      
+
+    </main>
+    
+    
+  </body>
+</html>
+
