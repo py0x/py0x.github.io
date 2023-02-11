@@ -1,5 +1,5 @@
 +++
-title = "Rust 实战 - 从零编写 JSON Parser"
+title = "实战 Rust - 从零编写 JSON Parser"
 description = "Writing a JSON parser from scratch"
 +++
 
@@ -161,9 +161,7 @@ assert_eq!((format!("19abcd"), "$$"), res);
 
 ### 结语
 
-能够熟练地使用 Traits 和 Generic Data Types 进行程序设计和实现，应该就能够 Thinking in Rust 了。
-
-能够使用一个语言来思考，无论这个语言是自然语言的英语，抑或是程序语言的 Rust，那么就算掌握这门语言了吧！
+能够熟练地使用 Traits 和 Generic Data Types 进行程序设计和实现，应该就能够 Thinking in Rust 了吧。
 
 
 

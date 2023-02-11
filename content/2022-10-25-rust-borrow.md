@@ -1,5 +1,5 @@
 +++
-title = "深入理解 Rust - References and Borrowing"
+title = "简明 Rust - References and Borrowing"
 description = "Understanding references and borrowing in Rust"
 +++
 
@@ -23,10 +23,13 @@ description = "Understanding references and borrowing in Rust"
 
 Rust 保护数据安全的机制就是这两个思路的组合：**如果你要允许一个引用修改数据，那么就不允许创建多个引用 (共享数据）。如果你要创建多个引用 (共享数据)，那么就不允许这些引用修改数据。**
 
-[官方文档](https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html)对这个理念的表达是：
+简而言之：
+> **共享不可变，可变不共享**。
+
+[官方文档](https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html)的说法如下：
 > At any given time, you can have either one mutable reference or any number of immutable references.
 
-（值得注意的是，这是一个静态约束，即编译期就可以检查的保证）
+（值得注意的是，这是一个静态约束，即编译期的保证）
 
 但凡事总有例外。
 
@@ -42,20 +45,12 @@ Rust 提供了另一个机制来处理这种场景。官方说法叫[内部可�
 
 共享可变性在运行期，而不是编译期来保证数据安全。核心做法是使用 [`Cell` 类型](https://doc.rust-lang.org/reference/interior-mutability.html)。
 
-(注：`interior-mutability` 是一个极其常见且重要的 pattern，阅读 Rust 开源代码时经常可以看到把可变的状态封装到一个 `inner` 数据结构的场景，
-而外层数据结构则提供基于 `&self` 而不是 `&mut self` 的 methods。这样就保证了用户使用这个数据结构时不是互斥的，增加了可用性。)
+(注：共享可变性是一个极其重要的 pattern，具体可以参考：[深入 Rust - 共享可变性](/rust-shared-mutability))
 
 总结一下：
 1. Rust 引用有两种：共享性引用(`&`)和可变性引用(`&mut`)
-2. 共享性引用和可变性引用在编译期互斥。要么有一个可变性引用(`&mut`)，要么有任意数量的共享性引用(`&`)，而不能同时有二者存在。
+2. 共享不可变，可变不共享。要么有一个可变性引用(`&mut`)，要么有任意数量的共享性引用(`&`)，而不能同时有二者存在。
 3. 共享性引用可以使用 [`Cell` 类型](https://doc.rust-lang.org/reference/interior-mutability.html) 使其在运行时可变，以满足共享且可变的场景。
-
----
-后记：
-
-为了加深理解，可变性引用(`&mut`) 可以理解成互斥性引用。它的 `mut` 其实可以理解为互斥锁 `mutex` 的 `mut`，而不是 `mutable` 的 `mut`。
-
-慢慢就会发现，Rust 中的 `mut` 关键字，基本上就是互斥的意思。
 
 
 

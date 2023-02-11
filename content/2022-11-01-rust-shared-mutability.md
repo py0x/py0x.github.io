@@ -1,5 +1,5 @@
 +++
-title = "深入理解 Rust - 共享可变性"
+title = "深入 Rust - 共享可变性"
 description = "Understanding shared mutability in Rust"
 +++
 

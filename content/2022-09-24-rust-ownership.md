@@ -1,5 +1,5 @@
 +++
-title = "简明 Rust 指南 - 理解 Rust Ownership 机制"
+title = "简明 Rust - 理解 Rust Ownership 机制"
 description = "Understanding ownership in Rust"
 +++
 

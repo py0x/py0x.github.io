@@ -1,5 +1,5 @@
 +++
-title = "深入理解 Rust - 异步编程内幕"
+title = "深入 Rust - 异步编程内幕"
 description = "Rust async in depth"
 +++
 
@@ -139,6 +139,6 @@ Reactor 的责任是通知 Executor 某个 Future ready 了，那么 Reactor 怎
 ## 结语
 Rust 异步是基于 [Future Trait](https://doc.rust-lang.org/std/future/trait.Future.html) 标准的生态系统。具体实现是多元化的，比如有不同的异步运行时实现。
 
-这里希望提供一些基础性和启发性的理解角度，具体的细节请参考其他文档。
+这里希望提供一些启发性的理解角度，具体的细节请参考其他文档。
 
 
