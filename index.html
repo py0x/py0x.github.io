@@ -18,80 +18,64 @@
         .container {
             text-align: center;
             padding: 2rem;
+            max-width: 800px;
+            width: 100%;
         }
         .avatar {
-            width: 150px;
-            height: 150px;
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         h1 {
-            margin: 0;
-            font-size: 2rem;
-            font-weight: 500;
+            margin: 0 0 0.5rem;
+            font-size: 2.2rem;
+            font-weight: 600;
         }
-        p {
-            color: #666;
-            line-height: 1.6;
-        }
-        .social {
-            margin-top: 1.5rem;
-        }
-        .social a {
+        .bio {
             color: #555;
-            text-decoration: none;
-            margin: 0 10px;
-        }
-        .social a:hover {
-            color: #000;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
         }
         .tweets-container {
-            max-width: 500px;
-            margin: 2rem auto;
+            max-width: 600px;
+            margin: 0 auto;
             text-align: left;
         }
-        
         .tweet {
             background: white;
             border-radius: 12px;
-            padding: 1rem;
-            margin: 1rem 0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            transition: transform 0.2s ease;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
         }
-        
         .tweet:hover {
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
         }
-        
         .tweet-content {
             margin: 0;
-            font-size: 0.95rem;
-            line-height: 1.5;
+            font-size: 1rem;
+            line-height: 1.6;
         }
-        
         .tweet-date {
             display: block;
-            margin-top: 0.5rem;
-            font-size: 0.8rem;
+            margin-top: 1rem;
+            font-size: 0.9rem;
             color: #888;
         }
         .article-tweet {
-            display: block;
             text-decoration: none;
             color: #333;
-            transition: transform 0.2s ease;
-        }
-        .article-tweet:hover {
-            transform: translateY(-2px);
         }
         .article-tweet .tweet-content {
-            font-weight: bold;
+            font-weight: 600;
         }
         h2.tweet-content {
-            color: inherit;
-            margin: 0;
-            font-size: 0.95rem;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
         }
     </style>
 </head>
@@ -99,28 +83,29 @@
     <div class="container">
         <img src="static/powpow02.jpeg" alt="头像" class="avatar">
         <h1>pinyu</h1>
-        <p>To define is to limit. (py@pypy.info)</p>
+        <p class="bio">To define is to limit. (py@pypy.info)</p>
         <div class="tweets-container">
             <div class="tweet">
                 <p class="tweet-content">
-                    LLM 如同一座无形的桥梁，一边连着误导的深渊，另一边则是精准传递的彼岸，行人需谨慎，一失足便掉进了幻觉的鸿沟。
+                    <p>思考的最终目的应该是创造而非否定。反思和批判更像是一种中间手段。</p>
+
+                    <p>考虑到思考可以通过多种媒介进行, 而不一定要转化为概念。</p>
+
+                    <p>哲学家用概念思考, 画家用线条和颜色思考, 音乐家用声音, 作家用文字, 电影人用图像和镜头。</p>
+
+                    <p>好的思想对应好的审美和品味。</p>
+
+                    <p>通过表达自己，人确立了自己的存在，同时丰富了世界，带来新的可能性。</p>
+
+                    <p>相比目标驱动，思想和审美驱动，是更加货真价实的人生态度。</p>
                 </p>
-                <time class="tweet-date" datetime="2024-11-19">2024年11月19日</time>
-            </div>
-            <div class="tweet article-tweet">
-                <article>
-                    <a href="post/lang.html" style="text-decoration: none">
-                        <p class="tweet-content">
-                            「About Language」
-                        </p>
-                        <time class="tweet-date" datetime="2024-11-18">2024年11月18日</time>
-                    </a>
-                </article>
+                <time class="tweet-date" datetime="2024-11-29">2024年11月29日</time>
             </div>
             <div class="tweet">
                 <p class="tweet-content">
                     人的进步并不是因为发现了唯一真理，更多地体现在不断远离不太恰当的世界观，并积极寻求与世界的互动。
                 </p>
+                <time class="tweet-date" datetime="2024-11-18">2024年11月18日</time>
             </div>
         </div>
     </div>
